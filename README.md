@@ -1,6 +1,6 @@
 # protoc-gen-pubsub-schema
 
-protoc-gen-pubsub-schema is a [protoc](https://github.com/protocolbuffers/protobuf) plugin
+This is a [protoc](https://github.com/protocolbuffers/protobuf) plugin
 that assembles protocol buffer messages into a single-valid message for defining [Pub/Sub schemas](https://cloud.google.com/pubsub/docs/schemas).
 
 ## Installation
