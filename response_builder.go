@@ -53,24 +53,23 @@ func (b responseBuilder) findProtoFileByName(desiredName string) *descriptorpb.F
 func (b responseBuilder) findMessageByName(desiredName string) *descriptorpb.DescriptorProto {
 	for _, protoFile := range b.request.GetProtoFile() {
 		packageName := strings.TrimSuffix("."+protoFile.GetPackage(), ".")
-		nestedResult := b.findNestedMessageByName(desiredName, protoFile.GetMessageType(), packageName)
-		if nestedResult != nil {
-			return nestedResult
+		message := b.findNestedMessageByName(desiredName, protoFile.GetMessageType(), packageName)
+		if message != nil {
+			return message
 		}
 	}
 	return nil
 }
 
-func (b responseBuilder) findNestedMessageByName(desiredName string, messages []*descriptorpb.DescriptorProto, prefix string) *descriptorpb.DescriptorProto {
+func (b responseBuilder) findNestedMessageByName(desiredName string, messages []*descriptorpb.DescriptorProto, messageNamePrefix string) *descriptorpb.DescriptorProto {
 	for _, message := range messages {
-		fullMessageName := prefix + "." + message.GetName()
-		if fullMessageName == desiredName {
+		messageName := messageNamePrefix + "." + message.GetName()
+		if messageName == desiredName {
 			return message
 		}
-
-		nestedResult := b.findNestedMessageByName(desiredName, message.GetNestedType(), fullMessageName)
-		if nestedResult != nil {
-			return nestedResult
+		nestedMessage := b.findNestedMessageByName(desiredName, message.GetNestedType(), messageName)
+		if nestedMessage != nil {
+			return nestedMessage
 		}
 	}
 	return nil
