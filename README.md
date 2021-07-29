@@ -33,5 +33,5 @@ The following example shows how to generate [example/user_add_comment.pubsub.pro
 export PATH=$PATH:$(go env GOPATH)/bin
 
 # generate example/user_add_comment.pubsub.proto
-protoc example/user_add_comment.proto --pubsub-schema_out .
+protoc example/user_add_comment.proto --pubsub-schema_out=.
 ```
