@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"regexp"
 	"strings"
 
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -15,6 +14,9 @@ type responseBuilder struct {
 }
 
 func buildResponseError(err error) *pluginpb.CodeGeneratorResponse {
+	if err == nil {
+		return nil
+	}
 	errorMessage := err.Error()
 	return &pluginpb.CodeGeneratorResponse{Error: &errorMessage}
 }
@@ -24,9 +26,7 @@ func (b responseBuilder) build() *pluginpb.CodeGeneratorResponse {
 	for _, fileName := range b.request.GetFileToGenerate() {
 		respFile, err := b.buildFile(fileName)
 		if err != nil {
-			errorMessage := err.Error()
-			resp.Error = &errorMessage
-			break
+			return buildResponseError(err)
 		}
 		resp.File = append(resp.File, respFile)
 	}
@@ -34,7 +34,7 @@ func (b responseBuilder) build() *pluginpb.CodeGeneratorResponse {
 }
 
 func (b responseBuilder) buildFile(reqFileName string) (*pluginpb.CodeGeneratorResponse_File, error) {
-	respFileName := regexp.MustCompile(`.proto$`).ReplaceAllString(reqFileName, ".pubsub.proto")
+	respFileName := strings.TrimSuffix(reqFileName, ".proto") + ".pubsub.proto"
 	content, err := b.buildContent(b.findProtoFileByName(reqFileName))
 	return &pluginpb.CodeGeneratorResponse_File{
 		Name:    &respFileName,
@@ -54,24 +54,23 @@ func (b responseBuilder) findProtoFileByName(desiredName string) *descriptorpb.F
 func (b responseBuilder) findMessageByName(desiredName string) *descriptorpb.DescriptorProto {
 	for _, protoFile := range b.request.GetProtoFile() {
 		packageName := strings.TrimSuffix("."+protoFile.GetPackage(), ".")
-		nestedResult := b.findNestedMessageByName(desiredName, protoFile.GetMessageType(), packageName)
-		if nestedResult != nil {
-			return nestedResult
+		message := b.findNestedMessageByName(desiredName, protoFile.GetMessageType(), packageName)
+		if message != nil {
+			return message
 		}
 	}
 	return nil
 }
 
-func (b responseBuilder) findNestedMessageByName(desiredName string, messages []*descriptorpb.DescriptorProto, prefix string) *descriptorpb.DescriptorProto {
+func (b responseBuilder) findNestedMessageByName(desiredName string, messages []*descriptorpb.DescriptorProto, messageNamePrefix string) *descriptorpb.DescriptorProto {
 	for _, message := range messages {
-		fullMessageName := prefix + "." + message.GetName()
-		if fullMessageName == desiredName {
+		messageName := messageNamePrefix + "." + message.GetName()
+		if messageName == desiredName {
 			return message
 		}
-
-		nestedResult := b.findNestedMessageByName(desiredName, message.GetNestedType(), fullMessageName)
-		if nestedResult != nil {
-			return nestedResult
+		nestedMessage := b.findNestedMessageByName(desiredName, message.GetNestedType(), messageName)
+		if nestedMessage != nil {
+			return nestedMessage
 		}
 	}
 	return nil
@@ -80,7 +79,7 @@ func (b responseBuilder) findNestedMessageByName(desiredName string, messages []
 func (b responseBuilder) buildContent(protoFile *descriptorpb.FileDescriptorProto) (string, error) {
 	if len(protoFile.GetMessageType()) != 1 {
 		return "", fmt.Errorf(
-			"only one top-level type may be defined in the file %s. use nested type instead (https://developers.google.com/protocol-buffers/docs/proto3#nested)",
+			"only one top-level type may be defined in the file \"%s\". use nested types instead (https://developers.google.com/protocol-buffers/docs/proto3#nested)",
 			protoFile.GetName(),
 		)
 	}
@@ -100,11 +99,11 @@ func (b responseBuilder) buildMessage(output io.Writer, message *descriptorpb.De
 }
 
 func (b responseBuilder) buildField(output io.Writer, field *descriptorpb.FieldDescriptorProto, level int) {
-	fieldType := strings.ToLower(strings.Replace(field.GetType().String(), "TYPE_", "", 1))
+	fieldType := strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_"))
+
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		fieldTypeName := field.GetTypeName()
-		b.buildMessage(output, b.findMessageByName(fieldTypeName), level)
-		fieldType = fieldTypeName[strings.LastIndexByte(fieldTypeName, '.')+1:]
+		b.buildMessage(output, b.findMessageByName(field.GetTypeName()), level)
+		fieldType = getShortTypeName(field.GetTypeName())
 	}
 
 	fmt.Fprint(output, buildIndent(level))
@@ -116,4 +115,8 @@ func (b responseBuilder) buildField(output io.Writer, field *descriptorpb.FieldD
 
 func buildIndent(level int) string {
 	return strings.Repeat("  ", level)
+}
+
+func getShortTypeName(typeName string) string {
+	return typeName[strings.LastIndexByte(typeName, '.')+1:]
 }
