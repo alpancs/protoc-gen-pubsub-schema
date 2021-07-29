@@ -11,11 +11,22 @@ Run the following command to install `protoc-gen-pubsub-schema`.
 go install github.com/alpancs/protoc-gen-pubsub-schema
 ```
 
-## Example
+## Usage
 
-Run the following command to generate [example/user_add_comment.pubsub.proto](example/user_add_comment.pubsub.proto) from [example/user_add_comment.proto](example/user_add_comment.proto).
 You need to have `protoc` installed.
 Follow <https://grpc.io/docs/protoc-installation> for instruction.
+
+To use this plugin, just run `protoc` with an option `--pubsub-schema_out`.
+`protoc` will automatically use `protoc-gen-pubsub-schema` executable file.
+`protoc` and `protoc-gen-pubsub-schema` must be found in shell's `$PATH`.
+
+```sh
+protoc PROTO_FILES --pubsub-schema_out=OUT_DIR
+```
+
+## Example
+
+The following example shows how to generate [example/user_add_comment.pubsub.proto](example/user_add_comment.pubsub.proto) from [example/user_add_comment.proto](example/user_add_comment.proto).
 
 ```sh
 # include go compiled binaries in the $PATH if it hasn't been there yet
