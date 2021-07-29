@@ -5,7 +5,7 @@ that assembles protocol buffer messages into a single-valid message for defining
 
 ## Installation
 
-To install `protoc-gen-pubsub-schema`, run the following command.
+Run the following command to install `protoc-gen-pubsub-schema`.
 
 ```sh
 go install github.com/alpancs/protoc-gen-pubsub-schema
@@ -13,10 +13,9 @@ go install github.com/alpancs/protoc-gen-pubsub-schema
 
 ## Example
 
-To run the example below, you need to have `protoc` installed.
-Follow <https://grpc.io/docs/protoc-installation> for the installation.
-
 Run the following command to generate `example/user_add_comment.pubsub.proto` from `example/user_add_comment.proto`.
+You need to have `protoc` installed.
+Follow <https://grpc.io/docs/protoc-installation> for instruction.
 
 ```sh
 # include go compiled binaries in the $PATH if it hasn't been there yet
