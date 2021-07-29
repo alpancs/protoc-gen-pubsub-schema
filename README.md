@@ -19,6 +19,9 @@ Follow <https://grpc.io/docs/protoc-installation> for the installation.
 Run the following command to generate `example/user_add_comment.pubsub.proto` from `example/user_add_comment.proto`.
 
 ```sh
-export PATH=$PATH:$(go env GOPATH)/bin # this line can be omitted if $(go env GOPATH)/bin have been already in the $PATH
+# include go compiled binaries in the $PATH if it hasn't been there yet
+export PATH=$PATH:$(go env GOPATH)/bin
+
+# generate example/user_add_comment.pubsub.proto
 protoc example/user_add_comment.proto --pubsub-schema_out .
 ```
