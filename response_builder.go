@@ -14,6 +14,9 @@ type responseBuilder struct {
 }
 
 func buildResponseError(err error) *pluginpb.CodeGeneratorResponse {
+	if err == nil {
+		return nil
+	}
 	errorMessage := err.Error()
 	return &pluginpb.CodeGeneratorResponse{Error: &errorMessage}
 }
