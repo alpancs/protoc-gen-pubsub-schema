@@ -13,7 +13,7 @@ go install github.com/alpancs/protoc-gen-pubsub-schema
 
 ## Example
 
-Run the following command to generate `example/user_add_comment.pubsub.proto` from `example/user_add_comment.proto`.
+Run the following command to generate [example/user_add_comment.pubsub.proto](example/user_add_comment.pubsub.proto) from [example/user_add_comment.proto](example/user_add_comment.proto).
 You need to have `protoc` installed.
 Follow <https://grpc.io/docs/protoc-installation> for instruction.
 
