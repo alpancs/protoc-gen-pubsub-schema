@@ -26,9 +26,7 @@ func (b responseBuilder) build() *pluginpb.CodeGeneratorResponse {
 	for _, fileName := range b.request.GetFileToGenerate() {
 		respFile, err := b.buildFile(fileName)
 		if err != nil {
-			errorMessage := err.Error()
-			resp.Error = &errorMessage
-			break
+			return buildResponseError(err)
 		}
 		resp.File = append(resp.File, respFile)
 	}
