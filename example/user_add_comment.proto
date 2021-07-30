@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package example;
 
+import "example/common.proto";
 import "google/protobuf/timestamp.proto";
 
 message UserAddComment {
@@ -16,5 +17,6 @@ message UserAddComment {
   }
   User user = 1;
   string comment = 2;
+  Label label = 3;
   google.protobuf.Timestamp timestamp = 101;
 }
