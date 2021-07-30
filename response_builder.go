@@ -102,6 +102,8 @@ func (b responseBuilder) buildField(output io.Writer, field *descriptorpb.FieldD
 	fieldType := strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_"))
 
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+		fmt.Fprintln(output)
+		defer fmt.Fprintln(output)
 		b.buildMessage(output, b.findMessageByName(field.GetTypeName()), level)
 		fieldType = getShortTypeName(field.GetTypeName())
 	}
