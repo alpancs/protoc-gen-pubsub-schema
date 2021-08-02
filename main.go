@@ -22,7 +22,7 @@ func processIO(input io.Reader, output io.Writer) {
 		return
 	}
 
-	err = encodeResponse(responseBuilder{req}.build(), output)
+	err = encodeResponse(newResponseBuilder(req).build(), output)
 	if err != nil {
 		panic(err)
 	}
