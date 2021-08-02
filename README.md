@@ -10,7 +10,7 @@ that assembles protocol buffer messages into a single-valid message for defining
 Run the following command to install `protoc-gen-pubsub-schema`.
 
 ```sh
-go install github.com/alpancs/protoc-gen-pubsub-schema
+go install github.com/alpancs/protoc-gen-pubsub-schema@latest
 ```
 
 ## Usage
