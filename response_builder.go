@@ -37,15 +37,15 @@ func (b *responseBuilder) initIndex() {
 	for _, protoFile := range b.request.GetProtoFile() {
 		b.protoFiles[protoFile.GetName()] = protoFile
 		packageName := strings.TrimSuffix("."+protoFile.GetPackage(), ".")
-		b.initIndexByMessages(protoFile.GetMessageType(), packageName)
+		b.initIndexByMessages(packageName, protoFile.GetMessageType())
 	}
 }
 
-func (b *responseBuilder) initIndexByMessages(messages []*descriptorpb.DescriptorProto, messageNamePrefix string) {
+func (b *responseBuilder) initIndexByMessages(messageNamePrefix string, messages []*descriptorpb.DescriptorProto) {
 	for _, message := range messages {
 		messageName := messageNamePrefix + "." + message.GetName()
 		b.messageTypes[messageName] = message
-		b.initIndexByMessages(message.GetNestedType(), messageName)
+		b.initIndexByMessages(messageName, message.GetNestedType())
 	}
 }
 
