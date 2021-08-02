@@ -1,5 +1,7 @@
 # protoc-gen-pubsub-schema
 
+[![Go](https://github.com/alpancs/protoc-gen-pubsub-schema/actions/workflows/go.yml/badge.svg)](https://github.com/alpancs/protoc-gen-pubsub-schema/actions/workflows/go.yml)
+
 This is a [protoc](https://github.com/protocolbuffers/protobuf) plugin
 that assembles protocol buffer messages into a single-valid message for defining [Pub/Sub schemas](https://cloud.google.com/pubsub/docs/schemas).
 
