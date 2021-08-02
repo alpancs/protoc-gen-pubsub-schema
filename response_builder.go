@@ -10,15 +10,39 @@ import (
 )
 
 type responseBuilder struct {
-	request *pluginpb.CodeGeneratorRequest
+	request      *pluginpb.CodeGeneratorRequest
+	protoFiles   map[string]*descriptorpb.FileDescriptorProto
+	messageTypes map[string]*descriptorpb.DescriptorProto
 }
 
-func buildResponseError(err error) *pluginpb.CodeGeneratorResponse {
-	if err == nil {
-		return nil
-	}
-	errorMessage := err.Error()
+func buildResponseError(errorMessage string) *pluginpb.CodeGeneratorResponse {
 	return &pluginpb.CodeGeneratorResponse{Error: &errorMessage}
+}
+
+func newResponseBuilder(req *pluginpb.CodeGeneratorRequest) responseBuilder {
+	builder := responseBuilder{
+		req,
+		make(map[string]*descriptorpb.FileDescriptorProto),
+		make(map[string]*descriptorpb.DescriptorProto),
+	}
+	builder.initIndex()
+	return builder
+}
+
+func (b *responseBuilder) initIndex() {
+	for _, protoFile := range b.request.GetProtoFile() {
+		b.protoFiles[protoFile.GetName()] = protoFile
+		packageName := strings.TrimSuffix("."+protoFile.GetPackage(), ".")
+		b.initIndexByMessages(packageName, protoFile.GetMessageType())
+	}
+}
+
+func (b *responseBuilder) initIndexByMessages(messageNamePrefix string, messages []*descriptorpb.DescriptorProto) {
+	for _, message := range messages {
+		messageName := messageNamePrefix + "." + message.GetName()
+		b.messageTypes[messageName] = message
+		b.initIndexByMessages(messageName, message.GetNestedType())
+	}
 }
 
 func (b responseBuilder) build() *pluginpb.CodeGeneratorResponse {
@@ -26,7 +50,7 @@ func (b responseBuilder) build() *pluginpb.CodeGeneratorResponse {
 	for _, fileName := range b.request.GetFileToGenerate() {
 		respFile, err := b.buildFile(fileName)
 		if err != nil {
-			return buildResponseError(err)
+			return buildResponseError(err.Error())
 		}
 		resp.File = append(resp.File, respFile)
 	}
@@ -35,45 +59,11 @@ func (b responseBuilder) build() *pluginpb.CodeGeneratorResponse {
 
 func (b responseBuilder) buildFile(reqFileName string) (*pluginpb.CodeGeneratorResponse_File, error) {
 	respFileName := strings.TrimSuffix(reqFileName, ".proto") + ".pubsub.proto"
-	content, err := b.buildContent(b.findProtoFileByName(reqFileName))
+	content, err := b.buildContent(b.protoFiles[reqFileName])
 	return &pluginpb.CodeGeneratorResponse_File{
 		Name:    &respFileName,
 		Content: &content,
 	}, err
-}
-
-func (b responseBuilder) findProtoFileByName(desiredName string) *descriptorpb.FileDescriptorProto {
-	for _, protoFile := range b.request.GetProtoFile() {
-		if protoFile.GetName() == desiredName {
-			return protoFile
-		}
-	}
-	return nil
-}
-
-func (b responseBuilder) findMessageByName(desiredName string) *descriptorpb.DescriptorProto {
-	for _, protoFile := range b.request.GetProtoFile() {
-		packageName := strings.TrimSuffix("."+protoFile.GetPackage(), ".")
-		message := b.findNestedMessageByName(desiredName, protoFile.GetMessageType(), packageName)
-		if message != nil {
-			return message
-		}
-	}
-	return nil
-}
-
-func (b responseBuilder) findNestedMessageByName(desiredName string, messages []*descriptorpb.DescriptorProto, messageNamePrefix string) *descriptorpb.DescriptorProto {
-	for _, message := range messages {
-		messageName := messageNamePrefix + "." + message.GetName()
-		if messageName == desiredName {
-			return message
-		}
-		nestedMessage := b.findNestedMessageByName(desiredName, message.GetNestedType(), messageName)
-		if nestedMessage != nil {
-			return nestedMessage
-		}
-	}
-	return nil
 }
 
 func (b responseBuilder) buildContent(protoFile *descriptorpb.FileDescriptorProto) (string, error) {
@@ -104,7 +94,7 @@ func (b responseBuilder) buildField(output io.Writer, field *descriptorpb.FieldD
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 		fmt.Fprintln(output)
 		defer fmt.Fprintln(output)
-		b.buildMessage(output, b.findMessageByName(field.GetTypeName()), level)
+		b.buildMessage(output, b.messageTypes[field.GetTypeName()], level)
 		fieldType = getShortTypeName(field.GetTypeName())
 	}
 
