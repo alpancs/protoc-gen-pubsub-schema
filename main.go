@@ -12,17 +12,17 @@ func main() {
 	processIO(os.Stdin, os.Stdout)
 }
 
-func processIO(io.Reader, io.Writer) {
-	req, err := decodeRequest(os.Stdin)
+func processIO(input io.Reader, output io.Writer) {
+	req, err := decodeRequest(input)
 	if err != nil {
-		err = encodeResponse(buildResponseError(err), os.Stdout)
+		err = encodeResponse(buildResponseError(err), output)
 		if err != nil {
 			panic(err)
 		}
 		return
 	}
 
-	err = encodeResponse(responseBuilder{req}.build(), os.Stdout)
+	err = encodeResponse(responseBuilder{req}.build(), output)
 	if err != nil {
 		panic(err)
 	}
