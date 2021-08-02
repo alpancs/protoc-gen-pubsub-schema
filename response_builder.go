@@ -15,11 +15,7 @@ type responseBuilder struct {
 	messageTypes map[string]*descriptorpb.DescriptorProto
 }
 
-func buildResponseError(err error) *pluginpb.CodeGeneratorResponse {
-	if err == nil {
-		return nil
-	}
-	errorMessage := err.Error()
+func buildResponseError(errorMessage string) *pluginpb.CodeGeneratorResponse {
 	return &pluginpb.CodeGeneratorResponse{Error: &errorMessage}
 }
 
@@ -54,7 +50,7 @@ func (b responseBuilder) build() *pluginpb.CodeGeneratorResponse {
 	for _, fileName := range b.request.GetFileToGenerate() {
 		respFile, err := b.buildFile(fileName)
 		if err != nil {
-			return buildResponseError(err)
+			return buildResponseError(err.Error())
 		}
 		resp.File = append(resp.File, respFile)
 	}
