@@ -9,6 +9,10 @@ import (
 )
 
 func main() {
+	processIO(os.Stdin, os.Stdout)
+}
+
+func processIO(io.Reader, io.Writer) {
 	req, err := decodeRequest(os.Stdin)
 	if err != nil {
 		err = encodeResponse(buildResponseError(err), os.Stdout)
