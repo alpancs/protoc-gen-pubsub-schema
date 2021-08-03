@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -68,10 +69,8 @@ func (b responseBuilder) buildFile(reqFileName string) (*pluginpb.CodeGeneratorR
 
 func (b responseBuilder) buildContent(protoFile *descriptorpb.FileDescriptorProto) (string, error) {
 	if len(protoFile.GetMessageType()) != 1 {
-		return "", fmt.Errorf(
-			"only one top-level type may be defined in the file \"%s\". use nested types instead (https://developers.google.com/protocol-buffers/docs/proto3#nested)",
-			protoFile.GetName(),
-		)
+		errorMessage := protoFile.GetName() + ": only one top-level type may be defined in a file. use nested types or use imports. see https://developers.google.com/protocol-buffers/docs/proto3 for details."
+		return "", errors.New(errorMessage)
 	}
 
 	contentBuilder := new(strings.Builder)
