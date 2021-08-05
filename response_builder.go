@@ -107,8 +107,8 @@ func (b responseBuilder) buildFieldType(output io.Writer, typeName string, level
 	}
 
 	fmt.Fprintln(output)
-	defer fmt.Fprintln(output)
 	b.buildMessage(output, b.messageTypes[typeName], level)
+	fmt.Fprintln(output)
 	return typeName[strings.LastIndexByte(typeName, '.')+1:]
 }
 
