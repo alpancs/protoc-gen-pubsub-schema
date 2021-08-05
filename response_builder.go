@@ -91,10 +91,7 @@ func (b responseBuilder) buildField(output io.Writer, field *descriptorpb.FieldD
 	fieldType := strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_"))
 
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		fmt.Fprintln(output)
-		defer fmt.Fprintln(output)
-		b.buildMessage(output, b.messageTypes[field.GetTypeName()], level)
-		fieldType = getShortTypeName(field.GetTypeName())
+		fieldType = b.buildFieldType(output, field.GetTypeName(), level)
 	}
 
 	fmt.Fprint(output, buildIndent(level))
@@ -104,10 +101,21 @@ func (b responseBuilder) buildField(output io.Writer, field *descriptorpb.FieldD
 	fmt.Fprintf(output, "%s %s = %d;\n", fieldType, field.GetName(), field.GetNumber())
 }
 
-func buildIndent(level int) string {
-	return strings.Repeat("  ", level)
+func (b responseBuilder) buildFieldType(output io.Writer, typeName string, level int) string {
+	if typeName, ok := wktMapping[typeName]; ok && b.hasJSONEncoding() {
+		return typeName
+	}
+
+	fmt.Fprintln(output)
+	b.buildMessage(output, b.messageTypes[typeName], level)
+	fmt.Fprintln(output)
+	return typeName[strings.LastIndexByte(typeName, '.')+1:]
 }
 
-func getShortTypeName(typeName string) string {
-	return typeName[strings.LastIndexByte(typeName, '.')+1:]
+func (b responseBuilder) hasJSONEncoding() bool {
+	return strings.Contains(b.request.GetParameter(), "encoding=json")
+}
+
+func buildIndent(level int) string {
+	return strings.Repeat("  ", level)
 }

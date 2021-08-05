@@ -11,24 +11,24 @@ message UserAddComment {
       double longitude = 1;
       double latitude = 2;
     }
+
     Location location = 3;
-
   }
-  User user = 1;
 
+  User user = 1;
   string comment = 2;
 
   message Label {
     string key = 1;
     string value = 2;
   }
-  Label label = 3;
 
+  Label label = 3;
 
   message Timestamp {
     int64 seconds = 1;
     int32 nanos = 2;
   }
-  Timestamp timestamp = 101;
 
+  Timestamp timestamp = 101;
 }

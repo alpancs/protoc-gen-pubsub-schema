@@ -9,17 +9,19 @@ message UserAddComment {
   message User {
     string first_name = 1;
     string last_name = 2;
+    bytes avatar = 3;
 
     message Location {
       double longitude = 1;
       double latitude = 2;
     }
 
-    Location location = 3;
+    Location location = 4;
   }
 
   User user = 1;
   string comment = 2;
-  Label label = 3;
+  example.Label label = 3;
+
   google.protobuf.Timestamp timestamp = 101;
 }
