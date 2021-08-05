@@ -102,10 +102,8 @@ func (b responseBuilder) buildField(output io.Writer, field *descriptorpb.FieldD
 }
 
 func (b responseBuilder) buildFieldType(output io.Writer, typeName string, level int) string {
-	if b.hasJSONEncoding() {
-		if typeName, ok := wktMapping[typeName]; ok {
-			return typeName
-		}
+	if typeName, ok := wktMapping[typeName]; ok && b.hasJSONEncoding() {
+		return typeName
 	}
 
 	fmt.Fprintln(output)
