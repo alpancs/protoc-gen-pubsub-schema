@@ -23,7 +23,11 @@ To use this plugin, just run `protoc` with an option `--pubsub-schema_out`.
 `protoc` and `protoc-gen-pubsub-schema` must be found in shell's `$PATH`.
 
 ```sh
+# generate assembled proto files that accept binary encoding
 protoc PROTO_FILES --pubsub-schema_out=OUT_DIR
+
+# generate assembled proto files that accept JSON encoding
+protoc PROTO_FILES --pubsub-schema_out=OUT_DIR --pubsub-schema_opt=encoding=json
 ```
 
 ## Example
