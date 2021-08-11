@@ -1,34 +1,35 @@
-z÷
-%example/user_add_comment.pubsub.protozÍsyntax = "proto3";
+zŒ
+%example/user_add_comment.pubsub.protozâsyntax = "proto2";
 
 message UserAddComment {
 
   message User {
-    string first_name = 1;
-    string last_name = 2;
+    required string first_name = 1;
+    optional string last_name = 2;
+    optional bytes avatar = 3;
 
     message Location {
-      double longitude = 1;
-      double latitude = 2;
+      required double longitude = 1;
+      required double latitude = 2;
     }
 
-    Location location = 3;
+    optional Location location = 4;
   }
 
-  User user = 1;
-  string comment = 2;
+  required User user = 1;
+  required string comment = 2;
 
   message Label {
-    string key = 1;
-    string value = 2;
+    optional string key = 1;
+    optional string value = 2;
   }
 
-  Label label = 3;
+  repeated Label labels = 3;
 
   message Timestamp {
-    int64 seconds = 1;
-    int32 nanos = 2;
+    optional int64 seconds = 1;
+    optional int32 nanos = 2;
   }
 
-  Timestamp timestamp = 101;
+  required Timestamp timestamp = 101;
 }
