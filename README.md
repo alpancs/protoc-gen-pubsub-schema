@@ -28,6 +28,9 @@ protoc PROTO_FILES --pubsub-schema_out=OUT_DIR
 
 # generate assembled proto files that accept JSON encoding
 protoc PROTO_FILES --pubsub-schema_out=OUT_DIR --pubsub-schema_opt=encoding=json
+
+# generate assembled proto files with proto3 syntax that accept JSON encoding
+protoc PROTO_FILES --pubsub-schema_out=OUT_DIR --pubsub-schema_opt=syntax=proto3 --pubsub-schema_opt=encoding=json
 ```
 
 ## Example

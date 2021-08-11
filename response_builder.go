@@ -74,9 +74,16 @@ func (b responseBuilder) buildContent(protoFile *descriptorpb.FileDescriptorProt
 	}
 
 	contentBuilder := new(strings.Builder)
-	fmt.Fprint(contentBuilder, "syntax = \"proto3\";\n\n")
+	fmt.Fprintf(contentBuilder, "syntax = \"%s\";\n\n", b.getOutputSyntax())
 	b.buildMessage(contentBuilder, protoFile.GetMessageType()[0], 0)
 	return contentBuilder.String(), nil
+}
+
+func (b responseBuilder) getOutputSyntax() string {
+	if strings.Contains(b.request.GetParameter(), "syntax=proto3") {
+		return "proto3"
+	}
+	return "proto2"
 }
 
 func (b responseBuilder) buildMessage(output io.Writer, message *descriptorpb.DescriptorProto, level int) {
