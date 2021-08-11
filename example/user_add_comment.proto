@@ -1,4 +1,4 @@
-syntax = "proto3";
+syntax = "proto2";
 
 package example;
 
@@ -7,21 +7,21 @@ import "google/protobuf/timestamp.proto";
 
 message UserAddComment {
   message User {
-    string first_name = 1;
-    string last_name = 2;
-    bytes avatar = 3;
+    required string first_name = 1;
+    optional string last_name = 2;
+    optional bytes avatar = 3;
 
     message Location {
-      double longitude = 1;
-      double latitude = 2;
+      required double longitude = 1;
+      required double latitude = 2;
     }
 
-    Location location = 4;
+    optional Location location = 4;
   }
 
-  User user = 1;
-  string comment = 2;
-  example.Label label = 3;
+  required User user = 1;
+  required string comment = 2;
+  repeated example.Label labels = 3;
 
-  google.protobuf.Timestamp timestamp = 101;
+  required google.protobuf.Timestamp timestamp = 101;
 }
