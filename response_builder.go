@@ -74,9 +74,13 @@ func (b responseBuilder) buildContent(protoFile *descriptorpb.FileDescriptorProt
 	}
 
 	contentBuilder := new(strings.Builder)
-	fmt.Fprintf(contentBuilder, "syntax = \"%s\";\n\n", b.getOutputSyntax())
+	b.buildSyntax(contentBuilder)
 	b.buildMessage(contentBuilder, protoFile.GetMessageType()[0], 0)
 	return contentBuilder.String(), nil
+}
+
+func (b responseBuilder) buildSyntax(output io.StringWriter) {
+	output.WriteString(`syntax = "` + b.getOutputSyntax() + `";` + "\n\n")
 }
 
 func (b responseBuilder) getOutputSyntax() string {
@@ -86,36 +90,40 @@ func (b responseBuilder) getOutputSyntax() string {
 	return "proto2"
 }
 
-func (b responseBuilder) buildMessage(output io.Writer, message *descriptorpb.DescriptorProto, level int) {
-	fmt.Fprintf(output, "%smessage %s {\n", buildIndent(level), message.GetName())
+func (b responseBuilder) buildMessage(output io.StringWriter, message *descriptorpb.DescriptorProto, level int) {
+	output.WriteString(buildIndent(level) + "message " + message.GetName() + " {\n")
 	for _, field := range message.GetField() {
 		b.buildField(output, field, level+1)
 	}
-	fmt.Fprintf(output, "%s}\n", buildIndent(level))
+	output.WriteString(buildIndent(level) + "}\n")
 }
 
-func (b responseBuilder) buildField(output io.Writer, field *descriptorpb.FieldDescriptorProto, level int) {
+func (b responseBuilder) buildField(output io.StringWriter, field *descriptorpb.FieldDescriptorProto, level int) {
 	fieldType := strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_"))
-
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 		fieldType = b.buildFieldType(output, field.GetTypeName(), level)
 	}
-
-	fmt.Fprint(output, buildIndent(level))
-	if field.GetLabel() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
-		fmt.Fprint(output, "repeated ")
-	}
-	fmt.Fprintf(output, "%s %s = %d;\n", fieldType, field.GetName(), field.GetNumber())
+	output.WriteString(buildIndent(level))
+	b.buildFieldLabel(output, field.GetLabel())
+	output.WriteString(fmt.Sprintf("%s %s = %d;\n", fieldType, field.GetName(), field.GetNumber()))
 }
 
-func (b responseBuilder) buildFieldType(output io.Writer, typeName string, level int) string {
+func (b responseBuilder) buildFieldLabel(output io.StringWriter, label descriptorpb.FieldDescriptorProto_Label) {
+	if label == descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
+		output.WriteString("repeated ")
+	} else if b.getOutputSyntax() == "proto2" {
+		output.WriteString(strings.ToLower(strings.TrimPrefix(label.String(), "LABEL_")) + " ")
+	}
+}
+
+func (b responseBuilder) buildFieldType(output io.StringWriter, typeName string, level int) string {
 	if typeName, ok := wktMapping[typeName]; ok && b.hasJSONEncoding() {
 		return typeName
 	}
 
-	fmt.Fprintln(output)
+	output.WriteString("\n")
 	b.buildMessage(output, b.messageTypes[typeName], level)
-	fmt.Fprintln(output)
+	output.WriteString("\n")
 	return typeName[strings.LastIndexByte(typeName, '.')+1:]
 }
 
