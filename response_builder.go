@@ -1,9 +1,6 @@
 package main
 
 import (
-	"errors"
-	"fmt"
-	"io"
 	"strings"
 
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -60,77 +57,9 @@ func (b responseBuilder) build() *pluginpb.CodeGeneratorResponse {
 
 func (b responseBuilder) buildFile(reqFileName string) (*pluginpb.CodeGeneratorResponse_File, error) {
 	respFileName := strings.TrimSuffix(reqFileName, ".proto") + ".pubsub.proto"
-	content, err := b.buildContent(b.protoFiles[reqFileName])
+	content, err := newContentBuilder(b).build(b.protoFiles[reqFileName])
 	return &pluginpb.CodeGeneratorResponse_File{
 		Name:    &respFileName,
 		Content: &content,
 	}, err
-}
-
-func (b responseBuilder) buildContent(protoFile *descriptorpb.FileDescriptorProto) (string, error) {
-	if len(protoFile.GetMessageType()) != 1 {
-		errorMessage := protoFile.GetName() + ": only one top-level type may be defined in a file. use nested types or use imports. see https://developers.google.com/protocol-buffers/docs/proto3 for details."
-		return "", errors.New(errorMessage)
-	}
-
-	contentBuilder := new(strings.Builder)
-	b.buildSyntax(contentBuilder)
-	b.buildMessage(contentBuilder, protoFile.GetMessageType()[0], 0)
-	return contentBuilder.String(), nil
-}
-
-func (b responseBuilder) buildSyntax(output io.StringWriter) {
-	output.WriteString(`syntax = "` + b.getOutputSyntax() + `";` + "\n\n")
-}
-
-func (b responseBuilder) getOutputSyntax() string {
-	if strings.Contains(b.request.GetParameter(), "syntax=proto3") {
-		return "proto3"
-	}
-	return "proto2"
-}
-
-func (b responseBuilder) buildMessage(output io.StringWriter, message *descriptorpb.DescriptorProto, level int) {
-	output.WriteString(buildIndent(level) + "message " + message.GetName() + " {\n")
-	for _, field := range message.GetField() {
-		b.buildField(output, field, level+1)
-	}
-	output.WriteString(buildIndent(level) + "}\n")
-}
-
-func (b responseBuilder) buildField(output io.StringWriter, field *descriptorpb.FieldDescriptorProto, level int) {
-	fieldType := strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_"))
-	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		fieldType = b.buildFieldType(output, field.GetTypeName(), level)
-	}
-	output.WriteString(buildIndent(level))
-	b.buildFieldLabel(output, field.GetLabel())
-	output.WriteString(fmt.Sprintf("%s %s = %d;\n", fieldType, field.GetName(), field.GetNumber()))
-}
-
-func (b responseBuilder) buildFieldLabel(output io.StringWriter, label descriptorpb.FieldDescriptorProto_Label) {
-	if label == descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
-		output.WriteString("repeated ")
-	} else if b.getOutputSyntax() == "proto2" {
-		output.WriteString(strings.ToLower(strings.TrimPrefix(label.String(), "LABEL_")) + " ")
-	}
-}
-
-func (b responseBuilder) buildFieldType(output io.StringWriter, typeName string, level int) string {
-	if typeName, ok := wktMapping[typeName]; ok && b.hasJSONEncoding() {
-		return typeName
-	}
-
-	output.WriteString("\n")
-	b.buildMessage(output, b.messageTypes[typeName], level)
-	output.WriteString("\n")
-	return typeName[strings.LastIndexByte(typeName, '.')+1:]
-}
-
-func (b responseBuilder) hasJSONEncoding() bool {
-	return strings.Contains(b.request.GetParameter(), "encoding=json")
-}
-
-func buildIndent(level int) string {
-	return strings.Repeat("  ", level)
 }
