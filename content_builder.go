@@ -9,10 +9,10 @@ import (
 )
 
 type contentBuilder struct {
-	rb              responseBuilder
-	output          *strings.Builder
+	messageTypes    map[string]*descriptorpb.DescriptorProto
 	syntax          string
 	forJSONEncoding bool
+	output          *strings.Builder
 }
 
 func newContentBuilder(rb responseBuilder) contentBuilder {
@@ -21,7 +21,7 @@ func newContentBuilder(rb responseBuilder) contentBuilder {
 		syntax = "proto3"
 	}
 	forJSONEncoding := strings.Contains(rb.request.GetParameter(), "encoding=json")
-	return contentBuilder{rb, new(strings.Builder), syntax, forJSONEncoding}
+	return contentBuilder{rb.messageTypes, syntax, forJSONEncoding, new(strings.Builder)}
 }
 
 func (b contentBuilder) build(protoFile *descriptorpb.FileDescriptorProto) (string, error) {
@@ -64,7 +64,7 @@ func (b contentBuilder) buildFieldType(typeName string, level int) string {
 	}
 
 	b.output.WriteString("\n")
-	b.buildMessage(b.rb.messageTypes[typeName], level)
+	b.buildMessage(b.messageTypes[typeName], level)
 	b.output.WriteString("\n")
 	return typeName[strings.LastIndexByte(typeName, '.')+1:]
 }
