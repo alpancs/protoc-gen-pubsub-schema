@@ -23,7 +23,7 @@ message UserAddComment {
     optional string value = 2;
   }
 
-  optional Label label = 3;
+  repeated Label labels = 3;
 
   message Timestamp {
     optional int64 seconds = 1;

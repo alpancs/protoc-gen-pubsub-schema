@@ -21,7 +21,7 @@ message UserAddComment {
 
   required User user = 1;
   required string comment = 2;
-  optional example.Label label = 3;
+  repeated example.Label labels = 3;
 
   required google.protobuf.Timestamp timestamp = 101;
 }
