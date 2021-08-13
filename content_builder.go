@@ -9,19 +9,19 @@ import (
 )
 
 type contentBuilder struct {
-	responseBuilder
+	*responseBuilder
 	syntax          string
 	forJSONEncoding bool
 	output          *strings.Builder
 }
 
-func newContentBuilder(rb responseBuilder) contentBuilder {
+func newContentBuilder(b *responseBuilder) contentBuilder {
 	syntax := "proto2"
-	if strings.Contains(rb.request.GetParameter(), "syntax=proto3") {
+	if strings.Contains(b.request.GetParameter(), "syntax=proto3") {
 		syntax = "proto3"
 	}
-	forJSONEncoding := strings.Contains(rb.request.GetParameter(), "encoding=json")
-	return contentBuilder{rb, syntax, forJSONEncoding, new(strings.Builder)}
+	forJSONEncoding := strings.Contains(b.request.GetParameter(), "encoding=json")
+	return contentBuilder{b, syntax, forJSONEncoding, new(strings.Builder)}
 }
 
 func (b contentBuilder) build(protoFile *descriptorpb.FileDescriptorProto) (string, error) {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"strings"
 
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -22,14 +23,17 @@ func buildResponseError(errorMessage string) *pluginpb.CodeGeneratorResponse {
 	return &pluginpb.CodeGeneratorResponse{Error: &errorMessage}
 }
 
-func newResponseBuilder(request *pluginpb.CodeGeneratorRequest) responseBuilder {
-	return responseBuilder{
+func newResponseBuilder(request *pluginpb.CodeGeneratorRequest) (*responseBuilder, error) {
+	if request == nil {
+		return nil, errors.New("newResponseBuilder(request *pluginpb.CodeGeneratorRequest): request is nil")
+	}
+	return &responseBuilder{
 		request,
 		getSyntax(request),
 		getEncoding(request),
 		getProtoFiles(request),
 		getMessageTypes(request),
-	}
+	}, nil
 }
 
 func getSyntax(request *pluginpb.CodeGeneratorRequest) string {
@@ -77,7 +81,7 @@ func (ms messageTypesType) setUsingMessage(namePrefix string, message *descripto
 	}
 }
 
-func (b responseBuilder) build() *pluginpb.CodeGeneratorResponse {
+func (b *responseBuilder) build() *pluginpb.CodeGeneratorResponse {
 	resp := new(pluginpb.CodeGeneratorResponse)
 	for _, fileName := range b.request.GetFileToGenerate() {
 		respFile, err := b.buildFile(fileName)
@@ -89,7 +93,7 @@ func (b responseBuilder) build() *pluginpb.CodeGeneratorResponse {
 	return resp
 }
 
-func (b responseBuilder) buildFile(reqFileName string) (*pluginpb.CodeGeneratorResponse_File, error) {
+func (b *responseBuilder) buildFile(reqFileName string) (*pluginpb.CodeGeneratorResponse_File, error) {
 	respFileName := strings.TrimSuffix(reqFileName, ".proto") + ".pubsub.proto"
 	content, err := newContentBuilder(b).build(b.protoFiles[reqFileName])
 	return &pluginpb.CodeGeneratorResponse_File{

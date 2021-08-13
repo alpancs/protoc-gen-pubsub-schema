@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func Test_processIO(t *testing.T) {
+func Test_process(t *testing.T) {
 	userAddCommentFile, err := os.Open("test/user_add_comment.protobuf")
 	if err != nil {
 		panic(err)
@@ -34,9 +34,9 @@ func Test_processIO(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			output := &bytes.Buffer{}
-			processIO(tt.args.input, output)
+			process(tt.args.input, output)
 			if gotOutput := output.Bytes(); !bytes.Equal(gotOutput, tt.wantOutput) {
-				t.Errorf("processIO() = len=%v, want len=%v", len(gotOutput), len(tt.wantOutput))
+				t.Errorf("process() = len=%v, want len=%v", len(gotOutput), len(tt.wantOutput))
 			}
 		})
 	}
