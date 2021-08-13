@@ -17,29 +17,29 @@ func buildResponseError(errorMessage string) *pluginpb.CodeGeneratorResponse {
 	return &pluginpb.CodeGeneratorResponse{Error: &errorMessage}
 }
 
-func newResponseBuilder(req *pluginpb.CodeGeneratorRequest) responseBuilder {
+func newResponseBuilder(request *pluginpb.CodeGeneratorRequest) responseBuilder {
 	builder := responseBuilder{
-		req,
+		request,
 		make(map[string]*descriptorpb.FileDescriptorProto),
 		make(map[string]*descriptorpb.DescriptorProto),
 	}
-	builder.initIndex()
+	builder.initProtoFileIndex()
 	return builder
 }
 
-func (b *responseBuilder) initIndex() {
+func (b responseBuilder) initProtoFileIndex() {
 	for _, protoFile := range b.request.GetProtoFile() {
 		b.protoFiles[protoFile.GetName()] = protoFile
 		packageName := strings.TrimSuffix("."+protoFile.GetPackage(), ".")
-		b.initIndexByMessages(packageName, protoFile.GetMessageType())
+		b.initProtoMessageIndex(packageName, protoFile.GetMessageType())
 	}
 }
 
-func (b *responseBuilder) initIndexByMessages(messageNamePrefix string, messages []*descriptorpb.DescriptorProto) {
+func (b responseBuilder) initProtoMessageIndex(messageNamePrefix string, messages []*descriptorpb.DescriptorProto) {
 	for _, message := range messages {
 		messageName := messageNamePrefix + "." + message.GetName()
 		b.messageTypes[messageName] = message
-		b.initIndexByMessages(messageName, message.GetNestedType())
+		b.initProtoMessageIndex(messageName, message.GetNestedType())
 	}
 }
 
