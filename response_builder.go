@@ -7,10 +7,15 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
+type protoFilesType map[string]*descriptorpb.FileDescriptorProto
+type messageTypesType map[string]*descriptorpb.DescriptorProto
+
 type responseBuilder struct {
 	request      *pluginpb.CodeGeneratorRequest
-	protoFiles   map[string]*descriptorpb.FileDescriptorProto
-	messageTypes map[string]*descriptorpb.DescriptorProto
+	syntax       string
+	encoding     string
+	protoFiles   protoFilesType
+	messageTypes messageTypesType
 }
 
 func buildResponseError(errorMessage string) *pluginpb.CodeGeneratorResponse {
@@ -18,28 +23,57 @@ func buildResponseError(errorMessage string) *pluginpb.CodeGeneratorResponse {
 }
 
 func newResponseBuilder(request *pluginpb.CodeGeneratorRequest) responseBuilder {
-	builder := responseBuilder{
+	return responseBuilder{
 		request,
-		make(map[string]*descriptorpb.FileDescriptorProto),
-		make(map[string]*descriptorpb.DescriptorProto),
-	}
-	builder.initProtoFileIndex()
-	return builder
-}
-
-func (b responseBuilder) initProtoFileIndex() {
-	for _, protoFile := range b.request.GetProtoFile() {
-		b.protoFiles[protoFile.GetName()] = protoFile
-		packageName := strings.TrimSuffix("."+protoFile.GetPackage(), ".")
-		b.initProtoMessageIndex(packageName, protoFile.GetMessageType())
+		getSyntax(request),
+		getEncoding(request),
+		getProtoFiles(request),
+		getMessageTypes(request),
 	}
 }
 
-func (b responseBuilder) initProtoMessageIndex(messageNamePrefix string, messages []*descriptorpb.DescriptorProto) {
-	for _, message := range messages {
-		messageName := messageNamePrefix + "." + message.GetName()
-		b.messageTypes[messageName] = message
-		b.initProtoMessageIndex(messageName, message.GetNestedType())
+func getSyntax(request *pluginpb.CodeGeneratorRequest) string {
+	if strings.Contains(request.GetParameter(), "syntax=proto3") {
+		return "proto3"
+	}
+	return "proto2"
+}
+
+func getEncoding(request *pluginpb.CodeGeneratorRequest) string {
+	if strings.Contains(request.GetParameter(), "encoding=json") {
+		return "json"
+	}
+	return "binary"
+}
+
+func getProtoFiles(request *pluginpb.CodeGeneratorRequest) protoFilesType {
+	protoFiles := make(protoFilesType)
+	for _, protoFile := range request.GetProtoFile() {
+		protoFiles[protoFile.GetName()] = protoFile
+	}
+	return protoFiles
+}
+
+func getMessageTypes(request *pluginpb.CodeGeneratorRequest) messageTypesType {
+	messageTypes := make(messageTypesType)
+	for _, protoFile := range request.GetProtoFile() {
+		messageTypes.setUsingFile(protoFile)
+	}
+	return messageTypes
+}
+
+func (ms messageTypesType) setUsingFile(file *descriptorpb.FileDescriptorProto) {
+	packageName := strings.TrimSuffix("."+file.GetPackage(), ".")
+	for _, m := range file.GetMessageType() {
+		ms.setUsingMessage(packageName+".", m)
+	}
+}
+
+func (ms messageTypesType) setUsingMessage(namePrefix string, message *descriptorpb.DescriptorProto) {
+	fullMessageName := namePrefix + message.GetName()
+	ms[fullMessageName] = message
+	for _, m := range message.GetNestedType() {
+		ms.setUsingMessage(fullMessageName+".", m)
 	}
 }
 
