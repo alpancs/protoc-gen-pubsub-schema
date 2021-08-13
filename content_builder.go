@@ -9,7 +9,7 @@ import (
 )
 
 type contentBuilder struct {
-	messageTypes    map[string]*descriptorpb.DescriptorProto
+	responseBuilder
 	syntax          string
 	forJSONEncoding bool
 	output          *strings.Builder
@@ -21,7 +21,7 @@ func newContentBuilder(rb responseBuilder) contentBuilder {
 		syntax = "proto3"
 	}
 	forJSONEncoding := strings.Contains(rb.request.GetParameter(), "encoding=json")
-	return contentBuilder{rb.messageTypes, syntax, forJSONEncoding, new(strings.Builder)}
+	return contentBuilder{rb, syntax, forJSONEncoding, new(strings.Builder)}
 }
 
 func (b contentBuilder) build(protoFile *descriptorpb.FileDescriptorProto) (string, error) {
