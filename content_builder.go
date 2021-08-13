@@ -23,7 +23,7 @@ func (b *contentBuilder) build(protoFile *descriptorpb.FileDescriptorProto) (str
 	}
 
 	if len(protoFile.GetMessageType()) != 1 {
-		return "", errors.New(protoFile.GetName() + ": only one top-level type may be defined in a file. use nested types or use imports. see https://developers.google.com/protocol-buffers/docs/proto3 for details.")
+		return "", errors.New(protoFile.GetName() + ": only one top-level type may be defined in a file (see https://cloud.google.com/pubsub/docs/schemas#schema_types). use nested types or imports (see https://developers.google.com/protocol-buffers/docs/proto)")
 	}
 
 	fmt.Fprintf(b.output, `syntax = "%s";`, b.syntax)
