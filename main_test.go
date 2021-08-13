@@ -22,8 +22,8 @@ func Test_process(t *testing.T) {
 	}{
 		{
 			name:       "sanity check",
-			args:       args{mustOpen("test/user_add_comment.in")},
-			wantOutput: mustRead("test/user_add_comment.out"),
+			args:       args{_mustOpen("test/user_add_comment.in")},
+			wantOutput: _mustRead("test/user_add_comment.out"),
 			wantErr:    false,
 		},
 	}
@@ -35,7 +35,7 @@ func Test_process(t *testing.T) {
 				return
 			}
 			if gotOutput := output.Bytes(); len(gotOutput) != len(tt.wantOutput) {
-				t.Errorf("process() = %v\nwant %v", mustDecodeResponse(gotOutput), mustDecodeResponse(tt.wantOutput))
+				t.Errorf("process() = %v\nwant %v", _mustDecodeResponse(gotOutput), _mustDecodeResponse(tt.wantOutput))
 			}
 		})
 
@@ -45,7 +45,7 @@ func Test_process(t *testing.T) {
 	}
 }
 
-func mustOpen(path string) io.Reader {
+func _mustOpen(path string) io.Reader {
 	file, err := os.Open(path)
 	if err != nil {
 		panic(err)
@@ -53,7 +53,7 @@ func mustOpen(path string) io.Reader {
 	return file
 }
 
-func mustRead(path string) []byte {
+func _mustRead(path string) []byte {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)
@@ -61,7 +61,7 @@ func mustRead(path string) []byte {
 	return content
 }
 
-func mustDecodeResponse(raw []byte) *pluginpb.CodeGeneratorResponse {
+func _mustDecodeResponse(raw []byte) *pluginpb.CodeGeneratorResponse {
 	resp := new(pluginpb.CodeGeneratorResponse)
 	err := proto.Unmarshal(raw, resp)
 	if err != nil {
