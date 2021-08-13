@@ -9,18 +9,24 @@ import (
 )
 
 func main() {
-	err := processIO(os.Stdin, os.Stdout)
+	err := process(os.Stdin, os.Stdout)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func processIO(input io.Reader, output io.Writer) error {
+func process(input io.Reader, output io.Writer) error {
 	req, err := decodeRequest(input)
 	if err != nil {
 		return encodeResponse(buildResponseError(err.Error()), output)
 	}
-	return encodeResponse(newResponseBuilder(req).build(), output)
+
+	builder, err := newResponseBuilder(req)
+	if err != nil {
+		return encodeResponse(buildResponseError(err.Error()), output)
+	}
+
+	return encodeResponse(builder.build(), output)
 }
 
 func decodeRequest(input io.Reader) (*pluginpb.CodeGeneratorRequest, error) {

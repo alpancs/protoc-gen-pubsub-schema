@@ -9,36 +9,30 @@ import (
 )
 
 type contentBuilder struct {
-	messageTypes    map[string]*descriptorpb.DescriptorProto
-	syntax          string
-	forJSONEncoding bool
-	output          *strings.Builder
+	*responseBuilder
+	output *strings.Builder
 }
 
-func newContentBuilder(rb responseBuilder) contentBuilder {
-	syntax := "proto2"
-	if strings.Contains(rb.request.GetParameter(), "syntax=proto3") {
-		syntax = "proto3"
-	}
-	forJSONEncoding := strings.Contains(rb.request.GetParameter(), "encoding=json")
-	return contentBuilder{rb.messageTypes, syntax, forJSONEncoding, new(strings.Builder)}
+func newContentBuilder(b *responseBuilder) *contentBuilder {
+	return &contentBuilder{b, new(strings.Builder)}
 }
 
-func (b contentBuilder) build(protoFile *descriptorpb.FileDescriptorProto) (string, error) {
+func (b *contentBuilder) build(protoFile *descriptorpb.FileDescriptorProto) (string, error) {
 	if protoFile == nil {
-		return "", errors.New("protoFile is nil")
+		return "", errors.New("build(protoFile *descriptorpb.FileDescriptorProto): protoFile is nil")
 	}
 
 	if len(protoFile.GetMessageType()) != 1 {
-		return "", errors.New(protoFile.GetName() + ": only one top-level type may be defined in a file. use nested types or use imports. see https://developers.google.com/protocol-buffers/docs/proto3 for details.")
+		return "", errors.New(protoFile.GetName() + ": only one top-level type may be defined in a file (see https://cloud.google.com/pubsub/docs/schemas#schema_types). use nested types or imports (see https://developers.google.com/protocol-buffers/docs/proto)")
 	}
 
-	b.output.WriteString(`syntax = "` + b.syntax + `";` + "\n\n")
+	fmt.Fprintf(b.output, `syntax = "%s";`, b.syntax)
+	b.output.WriteString("\n\n")
 	b.buildMessage(protoFile.GetMessageType()[0], 0)
 	return b.output.String(), nil
 }
 
-func (b contentBuilder) buildMessage(message *descriptorpb.DescriptorProto, level int) {
+func (b *contentBuilder) buildMessage(message *descriptorpb.DescriptorProto, level int) {
 	b.output.WriteString(buildIndent(level) + "message " + message.GetName() + " {\n")
 	for _, field := range message.GetField() {
 		b.buildField(field, level+1)
@@ -46,18 +40,18 @@ func (b contentBuilder) buildMessage(message *descriptorpb.DescriptorProto, leve
 	b.output.WriteString(buildIndent(level) + "}\n")
 }
 
-func (b contentBuilder) buildField(field *descriptorpb.FieldDescriptorProto, level int) {
+func (b *contentBuilder) buildField(field *descriptorpb.FieldDescriptorProto, level int) {
 	fieldType := strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_"))
 	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 		fieldType = b.buildFieldType(field.GetTypeName(), level)
 	}
 	b.output.WriteString(buildIndent(level))
 	b.buildFieldLabel(field.GetLabel())
-	b.output.WriteString(fmt.Sprintf("%s %s = %d;\n", fieldType, field.GetName(), field.GetNumber()))
+	fmt.Fprintf(b.output, "%s %s = %d;\n", fieldType, field.GetName(), field.GetNumber())
 }
 
-func (b contentBuilder) buildFieldType(typeName string, level int) string {
-	if b.forJSONEncoding {
+func (b *contentBuilder) buildFieldType(typeName string, level int) string {
+	if b.encoding == "json" {
 		if typeName, ok := wktMapping[typeName]; ok {
 			return typeName
 		}
@@ -69,7 +63,7 @@ func (b contentBuilder) buildFieldType(typeName string, level int) string {
 	return typeName[strings.LastIndexByte(typeName, '.')+1:]
 }
 
-func (b contentBuilder) buildFieldLabel(label descriptorpb.FieldDescriptorProto_Label) {
+func (b *contentBuilder) buildFieldLabel(label descriptorpb.FieldDescriptorProto_Label) {
 	if label == descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
 		b.output.WriteString("repeated ")
 	} else if b.syntax == "proto2" {
