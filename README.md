@@ -35,12 +35,12 @@ protoc PROTO_FILES --pubsub-schema_out=OUT_DIR --pubsub-schema_opt=syntax=proto3
 
 ## Example
 
-The following example shows how to generate [example/user_add_comment.pubsub.proto](example/user_add_comment.pubsub.proto) from [example/user_add_comment.proto](example/user_add_comment.proto).
+The following example shows how to generate [example/user_add_comment.pps](example/user_add_comment.pps) from [example/user_add_comment.proto](example/user_add_comment.proto).
 
 ```sh
 # include go compiled binaries in the $PATH if it hasn't been there yet
 export PATH=$PATH:$(go env GOPATH)/bin
 
-# generate example/user_add_comment.pubsub.proto
+# generate example/user_add_comment.pps
 protoc example/user_add_comment.proto --pubsub-schema_out=.
 ```
