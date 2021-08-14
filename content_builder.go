@@ -3,10 +3,13 @@ package main
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"google.golang.org/protobuf/types/descriptorpb"
 )
+
+type debtsType = map[string]bool
 
 type contentBuilder struct {
 	*responseBuilder
@@ -33,44 +36,78 @@ func (b *contentBuilder) build(protoFile *descriptorpb.FileDescriptorProto) (str
 }
 
 func (b *contentBuilder) buildMessage(message *descriptorpb.DescriptorProto, level int) {
-	b.output.WriteString(buildIndent(level) + "message " + message.GetName() + " {\n")
+	fmt.Fprintf(b.output, "%smessage %s {\n", buildIndent(level), message.GetName())
+	defer fmt.Fprintf(b.output, "%s}\n", buildIndent(level))
+	b.payDebts(b.buildFields(message, level), level+1)
+}
+
+func (b *contentBuilder) buildFields(message *descriptorpb.DescriptorProto, level int) debtsType {
+	debts := make(debtsType)
 	for _, field := range message.GetField() {
-		b.buildField(field, level+1)
-	}
-	b.output.WriteString(buildIndent(level) + "}\n")
-}
-
-func (b *contentBuilder) buildField(field *descriptorpb.FieldDescriptorProto, level int) {
-	fieldType := strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_"))
-	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		fieldType = b.buildFieldType(field.GetTypeName(), level)
-	}
-	b.output.WriteString(buildIndent(level))
-	b.buildFieldLabel(field.GetLabel())
-	fmt.Fprintf(b.output, "%s %s = %d;\n", fieldType, field.GetName(), field.GetNumber())
-}
-
-func (b *contentBuilder) buildFieldType(typeName string, level int) string {
-	if b.messageEncoding == "json" {
-		if typeName, ok := wktMapping[typeName]; ok {
-			return typeName
+		if debt := b.buildField(field, level+1); debt != "" {
+			debts[debt] = true
 		}
 	}
-
-	b.output.WriteString("\n")
-	b.buildMessage(b.messageTypes[typeName], level)
-	b.output.WriteString("\n")
-	return typeName[strings.LastIndexByte(typeName, '.')+1:]
+	return debts
 }
 
-func (b *contentBuilder) buildFieldLabel(label descriptorpb.FieldDescriptorProto_Label) {
-	if label == descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
-		b.output.WriteString("repeated ")
-	} else if b.schemaSyntax == "proto2" {
-		b.output.WriteString(strings.ToLower(strings.TrimPrefix(label.String(), "LABEL_")) + " ")
+func (b *contentBuilder) buildField(field *descriptorpb.FieldDescriptorProto, level int) string {
+	fieldType, debt := b.getFieldType(field)
+	fmt.Fprintf(b.output, "%s%s%s %s = %d;\n",
+		buildIndent(level),
+		b.getLabelPrefix(field.GetLabel()),
+		fieldType,
+		field.GetName(),
+		field.GetNumber(),
+	)
+	return debt
+}
+
+func (b *contentBuilder) getFieldType(field *descriptorpb.FieldDescriptorProto) (string, string) {
+	if field.GetType() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+		return strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_")), ""
 	}
+	fullMessageName := field.GetTypeName()
+	wkt := wktMapping[fullMessageName]
+	if b.messageEncoding == "json" && wkt != "" {
+		return wkt, ""
+	}
+	return getLocalName(fullMessageName), fullMessageName
+}
+
+func (b *contentBuilder) payDebts(debts debtsType, level int) {
+	for debt := range debts {
+		b.payDebt(debt, level)
+	}
+}
+
+func (b *contentBuilder) payDebt(fullMessageName string, level int) {
+	message := b.messageTypes[fullMessageName]
+	localName := getLocalName(fullMessageName)
+	message.Name = &localName
+	b.output.WriteString("\n")
+	b.buildMessage(message, level)
+}
+
+func (b *contentBuilder) getLabelPrefix(label descriptorpb.FieldDescriptorProto_Label) string {
+	if label == descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
+		return "repeated "
+	}
+	if b.schemaSyntax == "proto2" {
+		return strings.ToLower(strings.TrimPrefix(label.String(), "LABEL_")) + " "
+	}
+	return ""
 }
 
 func buildIndent(level int) string {
 	return strings.Repeat("  ", level)
+}
+
+var localNamePattern = regexp.MustCompile(`\.[A-Za-z0-9]`)
+
+func getLocalName(fullMessageName string) string {
+	return localNamePattern.ReplaceAllStringFunc(
+		fullMessageName,
+		func(s string) string { return strings.ToUpper(s[1:]) },
+	)
 }
