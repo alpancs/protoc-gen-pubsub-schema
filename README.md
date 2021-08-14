@@ -23,14 +23,14 @@ To use this plugin, just run `protoc` with an option `--pubsub-schema_out`.
 `protoc` and `protoc-gen-pubsub-schema` must be found in shell's `$PATH`.
 
 ```sh
-# generate assembled proto files with proto2 syntax that accept binary encoding
+# generate pubsub-proto-schema files using proto2 syntax that accept binary message encoding
 protoc PROTO_FILES --pubsub-schema_out=OUT_DIR
 
-# generate assembled proto files with proto2 syntax that accept JSON encoding
+# generate pubsub-proto-schema files using proto2 syntax that accept JSON message encoding
 protoc PROTO_FILES --pubsub-schema_out=OUT_DIR --pubsub-schema_opt=message-encoding=json
 
-# generate assembled proto files with proto3 syntax that accept JSON encoding
-protoc PROTO_FILES --pubsub-schema_out=OUT_DIR --pubsub-schema_opt=syntax=proto3 --pubsub-schema_opt=message-encoding=json
+# generate pubsub-proto-schema files using proto3 syntax that accept JSON message encoding
+protoc PROTO_FILES --pubsub-schema_out=OUT_DIR --pubsub-schema_opt=message-encoding=json --pubsub-schema_opt=schema-syntax=proto3
 ```
 
 ## Example

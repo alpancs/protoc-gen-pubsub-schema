@@ -26,7 +26,7 @@ func (b *contentBuilder) build(protoFile *descriptorpb.FileDescriptorProto) (str
 		return "", errors.New(protoFile.GetName() + ": only one top-level type may be defined in a file (see https://cloud.google.com/pubsub/docs/schemas#schema_types). use nested types or imports (see https://developers.google.com/protocol-buffers/docs/proto)")
 	}
 
-	fmt.Fprintf(b.output, `syntax = "%s";`, b.syntax)
+	fmt.Fprintf(b.output, `syntax = "%s";`, b.schemaSyntax)
 	b.output.WriteString("\n\n")
 	b.buildMessage(protoFile.GetMessageType()[0], 0)
 	return b.output.String(), nil
@@ -66,7 +66,7 @@ func (b *contentBuilder) buildFieldType(typeName string, level int) string {
 func (b *contentBuilder) buildFieldLabel(label descriptorpb.FieldDescriptorProto_Label) {
 	if label == descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
 		b.output.WriteString("repeated ")
-	} else if b.syntax == "proto2" {
+	} else if b.schemaSyntax == "proto2" {
 		b.output.WriteString(strings.ToLower(strings.TrimPrefix(label.String(), "LABEL_")) + " ")
 	}
 }

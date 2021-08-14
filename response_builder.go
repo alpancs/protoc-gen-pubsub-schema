@@ -13,7 +13,7 @@ type messageTypesType map[string]*descriptorpb.DescriptorProto
 
 type responseBuilder struct {
 	request         *pluginpb.CodeGeneratorRequest
-	syntax          string
+	schemaSyntax    string
 	messageEncoding string
 	protoFiles      protoFilesType
 	messageTypes    messageTypesType
