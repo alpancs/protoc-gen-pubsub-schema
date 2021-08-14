@@ -37,14 +37,14 @@ func newResponseBuilder(request *pluginpb.CodeGeneratorRequest) (*responseBuilde
 }
 
 func getSyntax(request *pluginpb.CodeGeneratorRequest) string {
-	if strings.Contains(request.GetParameter(), "syntax=proto3") {
+	if strings.Contains(request.GetParameter(), "schema-syntax=proto3") {
 		return "proto3"
 	}
 	return "proto2"
 }
 
 func getEncoding(request *pluginpb.CodeGeneratorRequest) string {
-	if strings.Contains(request.GetParameter(), "message-messageEncoding=json") {
+	if strings.Contains(request.GetParameter(), "message-encoding=json") {
 		return "json"
 	}
 	return "binary"
