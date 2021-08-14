@@ -1,5 +1,5 @@
-zŒ
-%example/user_add_comment.pubsub.protozâsyntax = "proto2";
+zƒ
+example/user_add_comment.ppszâsyntax = "proto2";
 
 message UserAddComment {
 

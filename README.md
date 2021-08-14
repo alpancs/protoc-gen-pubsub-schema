@@ -23,24 +23,24 @@ To use this plugin, just run `protoc` with an option `--pubsub-schema_out`.
 `protoc` and `protoc-gen-pubsub-schema` must be found in shell's `$PATH`.
 
 ```sh
-# generate assembled proto files with proto2 syntax that accept binary encoding
+# generate pubsub-proto-schema files using proto2 syntax that accept binary message encoding
 protoc PROTO_FILES --pubsub-schema_out=OUT_DIR
 
-# generate assembled proto files with proto2 syntax that accept JSON encoding
-protoc PROTO_FILES --pubsub-schema_out=OUT_DIR --pubsub-schema_opt=encoding=json
+# generate pubsub-proto-schema files using proto2 syntax that accept JSON message encoding
+protoc PROTO_FILES --pubsub-schema_out=OUT_DIR --pubsub-schema_opt=message-encoding=json
 
-# generate assembled proto files with proto3 syntax that accept JSON encoding
-protoc PROTO_FILES --pubsub-schema_out=OUT_DIR --pubsub-schema_opt=syntax=proto3 --pubsub-schema_opt=encoding=json
+# generate pubsub-proto-schema files using proto3 syntax that accept JSON message encoding
+protoc PROTO_FILES --pubsub-schema_out=OUT_DIR --pubsub-schema_opt=message-encoding=json --pubsub-schema_opt=schema-syntax=proto3
 ```
 
 ## Example
 
-The following example shows how to generate [example/user_add_comment.pubsub.proto](example/user_add_comment.pubsub.proto) from [example/user_add_comment.proto](example/user_add_comment.proto).
+The following example shows how to generate [example/user_add_comment.pps](example/user_add_comment.pps) from [example/user_add_comment.proto](example/user_add_comment.proto).
 
 ```sh
 # include go compiled binaries in the $PATH if it hasn't been there yet
 export PATH=$PATH:$(go env GOPATH)/bin
 
-# generate example/user_add_comment.pubsub.proto
+# generate example/user_add_comment.pps
 protoc example/user_add_comment.proto --pubsub-schema_out=.
 ```
