@@ -16,8 +16,8 @@ message UserAddComment {
     optional string last_name = 2;
     optional bytes avatar = 3;
     optional Location location = 4;
-    required google.protobuf.Timestamp created_at = 5;
-    required google.protobuf.Timestamp updated_at = 6;
+    optional google.protobuf.Timestamp created_at = 5;
+    optional google.protobuf.Timestamp updated_at = 6;
 
     message Location {
       required double longitude = 1;
