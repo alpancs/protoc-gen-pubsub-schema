@@ -2,7 +2,7 @@ syntax = "proto2";
 
 package example;
 
-import "example/common.proto";
+import "example/common/label.proto";
 import "google/protobuf/timestamp.proto";
 
 message UserAddComment {
@@ -21,7 +21,7 @@ message UserAddComment {
 
   required User user = 1;
   required string comment = 2;
-  repeated example.Label labels = 3;
+  repeated example.common.Label labels = 3;
 
   required google.protobuf.Timestamp timestamp = 101;
 }
