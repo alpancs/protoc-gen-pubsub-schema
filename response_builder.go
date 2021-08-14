@@ -12,11 +12,11 @@ type protoFilesType map[string]*descriptorpb.FileDescriptorProto
 type messageTypesType map[string]*descriptorpb.DescriptorProto
 
 type responseBuilder struct {
-	request      *pluginpb.CodeGeneratorRequest
-	syntax       string
-	encoding     string
-	protoFiles   protoFilesType
-	messageTypes messageTypesType
+	request         *pluginpb.CodeGeneratorRequest
+	syntax          string
+	messageEncoding string
+	protoFiles      protoFilesType
+	messageTypes    messageTypesType
 }
 
 func buildResponseError(errorMessage string) *pluginpb.CodeGeneratorResponse {
@@ -44,7 +44,7 @@ func getSyntax(request *pluginpb.CodeGeneratorRequest) string {
 }
 
 func getEncoding(request *pluginpb.CodeGeneratorRequest) string {
-	if strings.Contains(request.GetParameter(), "encoding=json") {
+	if strings.Contains(request.GetParameter(), "message-messageEncoding=json") {
 		return "json"
 	}
 	return "binary"

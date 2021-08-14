@@ -51,7 +51,7 @@ func (b *contentBuilder) buildField(field *descriptorpb.FieldDescriptorProto, le
 }
 
 func (b *contentBuilder) buildFieldType(typeName string, level int) string {
-	if b.encoding == "json" {
+	if b.messageEncoding == "json" {
 		if typeName, ok := wktMapping[typeName]; ok {
 			return typeName
 		}

@@ -27,10 +27,10 @@ To use this plugin, just run `protoc` with an option `--pubsub-schema_out`.
 protoc PROTO_FILES --pubsub-schema_out=OUT_DIR
 
 # generate assembled proto files with proto2 syntax that accept JSON encoding
-protoc PROTO_FILES --pubsub-schema_out=OUT_DIR --pubsub-schema_opt=encoding=json
+protoc PROTO_FILES --pubsub-schema_out=OUT_DIR --pubsub-schema_opt=message-encoding=json
 
 # generate assembled proto files with proto3 syntax that accept JSON encoding
-protoc PROTO_FILES --pubsub-schema_out=OUT_DIR --pubsub-schema_opt=syntax=proto3 --pubsub-schema_opt=encoding=json
+protoc PROTO_FILES --pubsub-schema_out=OUT_DIR --pubsub-schema_opt=syntax=proto3 --pubsub-schema_opt=message-encoding=json
 ```
 
 ## Example
