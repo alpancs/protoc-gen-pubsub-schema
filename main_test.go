@@ -34,11 +34,10 @@ func Test_process(t *testing.T) {
 				t.Errorf("process() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if gotOutput := output.Bytes(); len(gotOutput) != len(tt.wantOutput) {
+			if gotOutput := output.Bytes(); !bytes.Equal(gotOutput, tt.wantOutput) {
 				t.Errorf("process() = %v\nwant %v", _mustDecodeResponse(gotOutput), _mustDecodeResponse(tt.wantOutput))
 			}
 		})
-
 		if closer, ok := tt.args.input.(io.Closer); ok {
 			closer.Close()
 		}
