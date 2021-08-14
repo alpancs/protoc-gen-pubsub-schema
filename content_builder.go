@@ -83,6 +83,7 @@ func (b *contentBuilder) payDebts(debts debtsType, level int) {
 
 func (b *contentBuilder) payDebt(fullMessageName string, level int) {
 	message := b.messageTypes[fullMessageName]
+	defer func(originalName *string) { message.Name = originalName }(message.Name)
 	localName := getLocalName(fullMessageName)
 	message.Name = &localName
 	b.output.WriteString("\n")
