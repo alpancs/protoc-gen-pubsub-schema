@@ -1,35 +1,38 @@
-zƒ
-example/user_add_comment.ppszâsyntax = "proto2";
+zê
+example/user_add_comment.ppszÉsyntax = "proto2";
 
 message UserAddComment {
+  required ExampleUserAddCommentUser user = 1;
+  required string comment = 2;
+  repeated ExampleCommonLabel labels = 3;
+  required GoogleProtobufTimestamp timestamp = 101;
 
-  message User {
+  message ExampleUserAddCommentUser {
     required string first_name = 1;
     optional string last_name = 2;
     optional bytes avatar = 3;
+    optional ExampleUserAddCommentUserLocation location = 4;
+    optional GoogleProtobufTimestamp created_at = 5;
+    optional GoogleProtobufTimestamp updated_at = 6;
 
-    message Location {
+    message ExampleUserAddCommentUserLocation {
       required double longitude = 1;
       required double latitude = 2;
     }
 
-    optional Location location = 4;
+    message GoogleProtobufTimestamp {
+      optional int64 seconds = 1;
+      optional int32 nanos = 2;
+    }
   }
 
-  required User user = 1;
-  required string comment = 2;
-
-  message Label {
+  message ExampleCommonLabel {
     optional string key = 1;
     optional string value = 2;
   }
 
-  repeated Label labels = 3;
-
-  message Timestamp {
+  message GoogleProtobufTimestamp {
     optional int64 seconds = 1;
     optional int32 nanos = 2;
   }
-
-  required Timestamp timestamp = 101;
 }
