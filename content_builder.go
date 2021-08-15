@@ -60,9 +60,10 @@ func (b *contentBuilder) getFieldType(field *descriptorpb.FieldDescriptorProto) 
 		return strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_")), ""
 	}
 	fullMessageName := field.GetTypeName()
-	wkt := wktMapping[fullMessageName]
-	if b.messageEncoding == "json" && wkt != "" {
-		return wkt, ""
+	if b.messageEncoding == "json" {
+		if wkt, ok := wktMapping[fullMessageName]; ok {
+			return wkt, ""
+		}
 	}
 	return b.getLocalName(fullMessageName), fullMessageName
 }
