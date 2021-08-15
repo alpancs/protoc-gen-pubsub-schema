@@ -9,8 +9,6 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-type debtsType = map[string]bool
-
 type contentBuilder struct {
 	*responseBuilder
 	output *strings.Builder
@@ -37,18 +35,12 @@ func (b *contentBuilder) build(protoFile *descriptorpb.FileDescriptorProto) (str
 
 func (b *contentBuilder) buildMessage(message *descriptorpb.DescriptorProto, level int) {
 	fmt.Fprintf(b.output, "%smessage %s {\n", buildIndent(level), message.GetName())
-	defer fmt.Fprintf(b.output, "%s}\n", buildIndent(level))
-	b.payDebts(b.buildFields(message, level), level+1)
-}
-
-func (b *contentBuilder) buildFields(message *descriptorpb.DescriptorProto, level int) debtsType {
-	debts := make(debtsType)
+	debts := []string(nil)
 	for _, field := range message.GetField() {
-		if debt := b.buildField(field, level+1); debt != "" {
-			debts[debt] = true
-		}
+		debts = append(debts, b.buildField(field, level+1))
 	}
-	return debts
+	b.payDebts(debts, level+1)
+	fmt.Fprintf(b.output, "%s}\n", buildIndent(level))
 }
 
 func (b *contentBuilder) buildField(field *descriptorpb.FieldDescriptorProto, level int) string {
@@ -75,21 +67,6 @@ func (b *contentBuilder) getFieldType(field *descriptorpb.FieldDescriptorProto) 
 	return getLocalName(fullMessageName), fullMessageName
 }
 
-func (b *contentBuilder) payDebts(debts debtsType, level int) {
-	for debt := range debts {
-		b.payDebt(debt, level)
-	}
-}
-
-func (b *contentBuilder) payDebt(fullMessageName string, level int) {
-	message := b.messageTypes[fullMessageName]
-	defer func(originalName *string) { message.Name = originalName }(message.Name)
-	localName := getLocalName(fullMessageName)
-	message.Name = &localName
-	b.output.WriteString("\n")
-	b.buildMessage(message, level)
-}
-
 func (b *contentBuilder) getLabelPrefix(label descriptorpb.FieldDescriptorProto_Label) string {
 	if label == descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
 		return "repeated "
@@ -100,11 +77,30 @@ func (b *contentBuilder) getLabelPrefix(label descriptorpb.FieldDescriptorProto_
 	return ""
 }
 
+func (b *contentBuilder) payDebts(debts []string, level int) {
+	payedDebts := make(map[string]bool)
+	for _, debt := range debts {
+		if debt != "" && !payedDebts[debt] {
+			b.payDebt(debt, level)
+			payedDebts[debt] = true
+		}
+	}
+}
+
+func (b *contentBuilder) payDebt(debt string, level int) {
+	message := b.messageTypes[debt]
+	defer func(originalName *string) { message.Name = originalName }(message.Name)
+	localName := getLocalName(debt)
+	message.Name = &localName
+	b.output.WriteString("\n")
+	b.buildMessage(message, level)
+}
+
 func buildIndent(level int) string {
 	return strings.Repeat("  ", level)
 }
 
-var localNamePattern = regexp.MustCompile(`\.[A-Za-z0-9]`)
+var localNamePattern = regexp.MustCompile(`\..`)
 
 func getLocalName(fullMessageName string) string {
 	return localNamePattern.ReplaceAllStringFunc(
