@@ -9,24 +9,22 @@ import (
 )
 
 func main() {
-	err := process(os.Stdin, os.Stdout)
+	req, err := decodeRequest(os.Stdin)
 	if err != nil {
-		panic(err)
-	}
-}
-
-func process(input io.Reader, output io.Writer) error {
-	req, err := decodeRequest(input)
-	if err != nil {
-		return encodeResponse(buildResponseError(err.Error()), output)
+		exitWithResponseError(err.Error(), os.Stdout)
 	}
 
 	builder, err := newResponseBuilder(req)
 	if err != nil {
-		return encodeResponse(buildResponseError(err.Error()), output)
+		exitWithResponseError(err.Error(), os.Stdout)
 	}
 
-	return encodeResponse(builder.build(), output)
+	encodeResponse(builder.build(), os.Stdout)
+}
+
+func exitWithResponseError(errorMessage string, output io.Writer) {
+	encodeResponse(&pluginpb.CodeGeneratorResponse{Error: &errorMessage}, output)
+	os.Exit(0)
 }
 
 func decodeRequest(input io.Reader) (*pluginpb.CodeGeneratorRequest, error) {
@@ -34,7 +32,6 @@ func decodeRequest(input io.Reader) (*pluginpb.CodeGeneratorRequest, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	req := new(pluginpb.CodeGeneratorRequest)
 	err = proto.Unmarshal(rawInput, req)
 	return req, err
@@ -45,7 +42,6 @@ func encodeResponse(resp *pluginpb.CodeGeneratorResponse, output io.Writer) erro
 	if err != nil {
 		return err
 	}
-
 	_, err = output.Write(rawOutput)
 	return err
 }
