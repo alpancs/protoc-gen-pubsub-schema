@@ -60,11 +60,12 @@ func (b *contentBuilder) getFieldType(field *descriptorpb.FieldDescriptorProto) 
 		return strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_")), ""
 	}
 	fullMessageName := field.GetTypeName()
-	wkt := wktMapping[fullMessageName]
-	if b.messageEncoding == "json" && wkt != "" {
-		return wkt, ""
+	if b.messageEncoding == "json" {
+		if wkt, ok := wktMapping[fullMessageName]; ok {
+			return wkt, ""
+		}
 	}
-	return getLocalName(fullMessageName), fullMessageName
+	return b.getLocalName(fullMessageName), fullMessageName
 }
 
 func (b *contentBuilder) getLabelPrefix(label descriptorpb.FieldDescriptorProto_Label) string {
@@ -90,21 +91,29 @@ func (b *contentBuilder) payDebts(debts []string, level int) {
 func (b *contentBuilder) payDebt(debt string, level int) {
 	message := b.messageTypes[debt]
 	defer func(originalName *string) { message.Name = originalName }(message.Name)
-	localName := getLocalName(debt)
+	localName := b.getLocalName(debt)
 	message.Name = &localName
 	b.output.WriteString("\n")
 	b.buildMessage(message, level)
 }
 
-func buildIndent(level int) string {
-	return strings.Repeat("  ", level)
-}
-
 var localNamePattern = regexp.MustCompile(`\..`)
 
-func getLocalName(fullMessageName string) string {
+func (b *contentBuilder) getLocalName(fullMessageName string) string {
+	if b.isNestedType(fullMessageName) {
+		return fullMessageName[strings.LastIndexByte(fullMessageName, '.')+1:]
+	}
 	return localNamePattern.ReplaceAllStringFunc(
 		fullMessageName,
 		func(s string) string { return strings.ToUpper(s[1:]) },
 	)
+}
+
+func (b *contentBuilder) isNestedType(fullMessageName string) bool {
+	parent := fullMessageName[:strings.LastIndexByte(fullMessageName, '.')]
+	return b.messageTypes[parent] != nil
+}
+
+func buildIndent(level int) string {
+	return strings.Repeat("  ", level)
 }
