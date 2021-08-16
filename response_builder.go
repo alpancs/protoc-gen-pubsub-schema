@@ -19,10 +19,6 @@ type responseBuilder struct {
 	messageTypes    messageTypesType
 }
 
-func buildResponseError(errorMessage string) *pluginpb.CodeGeneratorResponse {
-	return &pluginpb.CodeGeneratorResponse{Error: &errorMessage}
-}
-
 func newResponseBuilder(request *pluginpb.CodeGeneratorRequest) (*responseBuilder, error) {
 	if request == nil {
 		return nil, errors.New("newResponseBuilder(request *pluginpb.CodeGeneratorRequest): request is nil")
@@ -86,7 +82,9 @@ func (b *responseBuilder) build() *pluginpb.CodeGeneratorResponse {
 	for _, fileName := range b.request.GetFileToGenerate() {
 		respFile, err := b.buildFile(fileName)
 		if err != nil {
-			return buildResponseError(err.Error())
+			errorMessage := err.Error()
+			resp.Error = &errorMessage
+			return resp
 		}
 		resp.File = append(resp.File, respFile)
 	}
