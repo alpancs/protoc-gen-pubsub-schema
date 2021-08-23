@@ -17,15 +17,15 @@ jobs:
     - uses: arduino/setup-protoc@v1
       with:
         version: '3.17.3'
-    - name: test
+    - name: Run go test
       run: go test -v ./...
-    - name: install
-      run: go install
-    - name: run examples
+    - name: Install protoc-gen-pubsub-schema
       run: |
+        go install
         export PATH=$PATH:$(go env GOPATH)/bin
-        protoc example/user_add_comment.proto --pubsub-schema_out=.
-    - name: verify examples are working
+    - name: Run examples
+      run: protoc example/user_add_comment.proto --pubsub-schema_out=.
+    - name: Verify examples are working
       run: |
         if [ -n "$(git status --porcelain)" ]; then
           git status # Show the files that failed to pass the check.
