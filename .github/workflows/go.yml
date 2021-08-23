@@ -8,6 +8,7 @@ on:
 
 jobs:
   test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -24,8 +25,4 @@ jobs:
     - name: Run examples
       run: protoc example/user_add_comment.proto --pubsub-schema_out=.
     - name: Verify examples are working
-      run: |
-        if [ -n "$(git status --porcelain)" ]; then
-          git status # Show the files that failed to pass the check.
-          exit 1
-        fi
+      run: if [ -n "$(git status --porcelain)" ]; then git status; exit 1; fi
