@@ -20,9 +20,7 @@ jobs:
     - name: Run go test
       run: go test -v ./...
     - name: Install protoc-gen-pubsub-schema
-      run: |
-        go install
-        export PATH=$PATH:$(go env GOPATH)/bin
+      run: go install
     - name: Run examples
       run: protoc example/user_add_comment.proto --pubsub-schema_out=.
     - name: Verify examples are working
