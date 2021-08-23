@@ -8,24 +8,21 @@ on:
 
 jobs:
   test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-go@v2
       with:
-        go-version: ^1.17
+        go-version: '^1.17'
     - uses: arduino/setup-protoc@v1
-    - name: test
+      with:
+        version: '3.17.3'
+    - name: Run go test
       run: go test -v ./...
-    - name: install
+    - name: Install protoc-gen-pubsub-schema
       run: go install
-    - name: run examples
-      run: |
-        export PATH=$PATH:$(go env GOPATH)/bin
-        protoc example/user_add_comment.proto --pubsub-schema_out=.
-    - name: verify examples are working
-      run: |
-        if [ -n "$(git status --porcelain)" ]; then
-          git status # Show the files that failed to pass the check.
-          exit 1
-        fi
+    - name: Run examples
+      run: protoc example/user_add_comment.proto --pubsub-schema_out=.
+    - name: Verify examples are working
+      run: if [ -n "$(git status --porcelain)" ]; then git status; exit 1; fi
