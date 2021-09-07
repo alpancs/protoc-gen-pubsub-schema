@@ -8,7 +8,8 @@ import "google/protobuf/timestamp.proto";
 message UserAddComment {
   required User user = 1;
   required string comment = 2;
-  repeated example.common.Label labels = 3;
+  required Role role = 3;
+  repeated example.common.Label labels = 4;
   required google.protobuf.Timestamp timestamp = 101;
 
   message User {
@@ -23,5 +24,11 @@ message UserAddComment {
       required double longitude = 1;
       required double latitude = 2;
     }
+  }
+
+  enum Role {
+    OWNER = 1;
+    EDITOR = 2;
+    VIEWER = 3;
   }
 }
