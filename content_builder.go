@@ -73,28 +73,31 @@ func (b *contentBuilder) getFieldType(field *descriptorpb.FieldDescriptorProto) 
 		if b.messageEncoding == "json" && wktMapping[typeName] != "" {
 			return wktMapping[typeName]
 		}
-		return b.getLocalName(typeName)
+		if b.isNestedType(typeName) {
+			return shortName(typeName)
+		}
+		return pascalCase(typeName)
 	case descriptorpb.FieldDescriptorProto_TYPE_ENUM:
-		return typeName[strings.LastIndexByte(typeName, '.')+1:]
+		return shortName(typeName)
 	default:
 		return strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_"))
 	}
 }
 
-func (b *contentBuilder) getLocalName(name string) string {
+func shortName(name string) string {
 	return name[strings.LastIndexByte(name, '.')+1:]
-	// if b.isNestedType(name) {
-	// 	return name[strings.LastIndexByte(name, '.')+1:]
-	// }
-	// sb := new(strings.Builder)
-	// for i, c := range name {
-	// 	if i > 0 && name[i-1] == '.' {
-	// 		sb.WriteString(strings.ToUpper(string(c)))
-	// 	} else if c != '.' {
-	// 		sb.WriteRune(c)
-	// 	}
-	// }
-	// return sb.String()
+}
+
+func pascalCase(name string) string {
+	sb := new(strings.Builder)
+	for i, c := range name {
+		if i > 0 && name[i-1] == '.' {
+			sb.WriteString(strings.ToUpper(string(c)))
+		} else if c != '.' {
+			sb.WriteRune(c)
+		}
+	}
+	return sb.String()
 }
 
 func (b *contentBuilder) buildNestedTypes(messages []*descriptorpb.DescriptorProto, level int) {
@@ -135,10 +138,17 @@ func (b *contentBuilder) buildOtherTypes(fields []*descriptorpb.FieldDescriptorP
 		if built[typeName] {
 			continue
 		}
-		fmt.Fprintln(b.output)
-		b.buildMessage(b.messageTypes[typeName], level)
+		b.buildOtherType(typeName, level)
 		built[typeName] = true
 	}
+}
+
+func (b *contentBuilder) buildOtherType(typeName string, level int) {
+	message := b.messageTypes[typeName]
+	defer func(name *string) { message.Name = name }(message.Name)
+	*message.Name = pascalCase(typeName)
+	fmt.Fprintln(b.output)
+	b.buildMessage(message, level)
 }
 
 func (b *contentBuilder) isNestedType(name string) bool {
