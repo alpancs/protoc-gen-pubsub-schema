@@ -65,16 +65,17 @@ func (b *contentBuilder) buildField(field *descriptorpb.FieldDescriptorProto, le
 }
 
 func (b *contentBuilder) getFieldType(field *descriptorpb.FieldDescriptorProto) (string, string) {
-	if field.GetType() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		return strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_")), ""
-	}
 	fullMessageName := field.GetTypeName()
-	if b.messageEncoding == "json" {
-		if wkt, ok := wktMapping[fullMessageName]; ok {
-			return wkt, ""
+	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+		if b.messageEncoding == "json" && wktMapping[fullMessageName] != "" {
+			return wktMapping[fullMessageName], ""
 		}
+		return b.getLocalName(fullMessageName), fullMessageName
 	}
-	return b.getLocalName(fullMessageName), fullMessageName
+	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
+		return b.getLocalName(fullMessageName), ""
+	}
+	return strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_")), ""
 }
 
 func (b *contentBuilder) getLabelPrefix(label descriptorpb.FieldDescriptorProto_Label) string {
@@ -133,7 +134,7 @@ func (b *contentBuilder) buildEnums(enums []*descriptorpb.EnumDescriptorProto, l
 func (b *contentBuilder) buildEnum(enum *descriptorpb.EnumDescriptorProto, level int) {
 	fmt.Fprintf(b.output, "%senum %s {\n", buildIndent(level), enum.GetName())
 	for _, value := range enum.GetValue() {
-		fmt.Fprintf(b.output, "%s%s = %d;", buildIndent(level+1), value.GetName(), value.GetNumber())
+		fmt.Fprintf(b.output, "%s%s = %d;\n", buildIndent(level+1), value.GetName(), value.GetNumber())
 	}
 	fmt.Fprintf(b.output, "%s}\n", buildIndent(level))
 }
