@@ -41,29 +41,22 @@ func (b *contentBuilder) build(protoFile *descriptorpb.FileDescriptorProto) (str
 
 func (b *contentBuilder) buildMessage(message *descriptorpb.DescriptorProto, level int) {
 	fmt.Fprintf(b.output, "%smessage %s {\n", buildIndent(level), message.GetName())
-	for _, field := range message.GetField() {
-		fmt.Fprintf(b.output, "%s%s%s %s = %d;\n",
-			buildIndent(level+1),
-			b.getLabelPrefix(field.GetLabel()),
-			b.getFieldType(field),
-			field.GetName(),
-			field.GetNumber(),
-		)
-	}
-	b.buildNestedTypes(message.GetNestedType(), level+1)
+	b.buildFields(message, level+1)
+	b.buildNestedTypes(message, level+1)
 	b.buildEnums(message.GetEnumType(), level+1)
-	b.buildOtherTypes(message.GetField(), level+1)
+	b.buildOtherTypes(message, level+1)
 	fmt.Fprintf(b.output, "%s}\n", buildIndent(level))
 }
 
-func (b *contentBuilder) getLabelPrefix(label descriptorpb.FieldDescriptorProto_Label) string {
-	if label == descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
-		return "repeated "
+func (b *contentBuilder) buildFields(message *descriptorpb.DescriptorProto, level int) {
+	for _, field := range message.GetField() {
+		fmt.Fprint(b.output, buildIndent(level))
+		label := field.GetLabel()
+		if b.schemaSyntax == "proto2" || label == descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
+			fmt.Fprintf(b.output, "%s ", strings.ToLower(strings.TrimPrefix(label.String(), "LABEL_")))
+		}
+		fmt.Fprintf(b.output, "%s %s = %d;\n", b.getFieldType(field), field.GetName(), field.GetNumber())
 	}
-	if b.schemaSyntax == "proto2" {
-		return strings.ToLower(strings.TrimPrefix(label.String(), "LABEL_")) + " "
-	}
-	return ""
 }
 
 func (b *contentBuilder) getFieldType(field *descriptorpb.FieldDescriptorProto) string {
@@ -84,24 +77,8 @@ func (b *contentBuilder) getFieldType(field *descriptorpb.FieldDescriptorProto) 
 	}
 }
 
-func shortName(name string) string {
-	return name[strings.LastIndexByte(name, '.')+1:]
-}
-
-func pascalCase(name string) string {
-	sb := new(strings.Builder)
-	for i, c := range name {
-		if i > 0 && name[i-1] == '.' {
-			sb.WriteString(strings.ToUpper(string(c)))
-		} else if c != '.' {
-			sb.WriteRune(c)
-		}
-	}
-	return sb.String()
-}
-
-func (b *contentBuilder) buildNestedTypes(messages []*descriptorpb.DescriptorProto, level int) {
-	for _, message := range messages {
+func (b *contentBuilder) buildNestedTypes(message *descriptorpb.DescriptorProto, level int) {
+	for _, message := range message.GetNestedType() {
 		fmt.Fprintln(b.output)
 		b.buildMessage(message, level)
 	}
@@ -110,21 +87,17 @@ func (b *contentBuilder) buildNestedTypes(messages []*descriptorpb.DescriptorPro
 func (b *contentBuilder) buildEnums(enums []*descriptorpb.EnumDescriptorProto, level int) {
 	for _, enum := range enums {
 		fmt.Fprintln(b.output)
-		b.buildEnum(enum, level)
+		fmt.Fprintf(b.output, "%senum %s {\n", buildIndent(level), enum.GetName())
+		for _, value := range enum.GetValue() {
+			fmt.Fprintf(b.output, "%s%s = %d;\n", buildIndent(level+1), value.GetName(), value.GetNumber())
+		}
+		fmt.Fprintf(b.output, "%s}\n", buildIndent(level))
 	}
 }
 
-func (b *contentBuilder) buildEnum(enum *descriptorpb.EnumDescriptorProto, level int) {
-	fmt.Fprintf(b.output, "%senum %s {\n", buildIndent(level), enum.GetName())
-	for _, value := range enum.GetValue() {
-		fmt.Fprintf(b.output, "%s%s = %d;\n", buildIndent(level+1), value.GetName(), value.GetNumber())
-	}
-	fmt.Fprintf(b.output, "%s}\n", buildIndent(level))
-}
-
-func (b *contentBuilder) buildOtherTypes(fields []*descriptorpb.FieldDescriptorProto, level int) {
+func (b *contentBuilder) buildOtherTypes(message *descriptorpb.DescriptorProto, level int) {
 	built := make(map[string]bool)
-	for _, field := range fields {
+	for _, field := range message.GetField() {
 		typeName := field.GetTypeName()
 		if field.GetType() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 			continue
@@ -157,4 +130,20 @@ func (b *contentBuilder) isNestedType(name string) bool {
 
 func buildIndent(level int) string {
 	return strings.Repeat("  ", level)
+}
+
+func shortName(name string) string {
+	return name[strings.LastIndexByte(name, '.')+1:]
+}
+
+func pascalCase(name string) string {
+	sb := new(strings.Builder)
+	for i, c := range name {
+		if i > 0 && name[i-1] == '.' {
+			sb.WriteString(strings.ToUpper(string(c)))
+		} else if c != '.' {
+			sb.WriteRune(c)
+		}
+	}
+	return sb.String()
 }
