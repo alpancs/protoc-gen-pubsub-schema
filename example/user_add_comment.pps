@@ -32,18 +32,18 @@ message UserAddComment {
       VIEWER = 3;
     }
 
-    message GeneratedTimestamp {
+    message Timestamp {
       optional int64 seconds = 1;
       optional int32 nanos = 2;
     }
   }
 
-  message GeneratedLabel {
+  message Label {
     optional string key = 1;
     optional string value = 2;
   }
 
-  message GeneratedTimestamp {
+  message Timestamp {
     optional int64 seconds = 1;
     optional int32 nanos = 2;
   }

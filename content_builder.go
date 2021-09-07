@@ -34,13 +34,13 @@ func (b *contentBuilder) build(protoFile *descriptorpb.FileDescriptorProto) (str
 	fmt.Fprintf(b.output, "// source: %s\n\n", protoFile.GetName())
 	fmt.Fprintf(b.output, `syntax = "%s";`, b.schemaSyntax)
 	fmt.Fprint(b.output, "\n\n")
-	b.buildMessage("", protoFile.GetMessageType()[0], 0)
+	b.buildMessage(protoFile.GetMessageType()[0], 0)
 	b.buildEnums(protoFile.GetEnumType(), 0)
 	return b.output.String(), nil
 }
 
-func (b *contentBuilder) buildMessage(prefix string, message *descriptorpb.DescriptorProto, level int) {
-	fmt.Fprintf(b.output, "%smessage %s%s {\n", buildIndent(level), prefix, message.GetName())
+func (b *contentBuilder) buildMessage(message *descriptorpb.DescriptorProto, level int) {
+	fmt.Fprintf(b.output, "%smessage %s {\n", buildIndent(level), message.GetName())
 	for _, field := range message.GetField() {
 		fmt.Fprintf(b.output, "%s%s%s %s = %d;\n",
 			buildIndent(level+1),
@@ -99,7 +99,7 @@ func (b *contentBuilder) getLocalName(name string) string {
 func (b *contentBuilder) buildNestedTypes(messages []*descriptorpb.DescriptorProto, level int) {
 	for _, message := range messages {
 		fmt.Fprintln(b.output)
-		b.buildMessage("", message, level)
+		b.buildMessage(message, level)
 	}
 }
 
@@ -135,7 +135,7 @@ func (b *contentBuilder) buildOtherTypes(fields []*descriptorpb.FieldDescriptorP
 			continue
 		}
 		fmt.Fprintln(b.output)
-		b.buildMessage("Generated", b.messageTypes[typeName], level)
+		b.buildMessage(b.messageTypes[typeName], level)
 		built[typeName] = true
 	}
 }
