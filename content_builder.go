@@ -82,18 +82,19 @@ func (b *contentBuilder) getFieldType(field *descriptorpb.FieldDescriptorProto) 
 }
 
 func (b *contentBuilder) getLocalName(name string) string {
-	if b.isNestedType(name) {
-		return name[strings.LastIndexByte(name, '.')+1:]
-	}
-	sb := new(strings.Builder)
-	for i, c := range name {
-		if i > 0 && name[i-1] == '.' {
-			sb.WriteString(strings.ToUpper(string(c)))
-		} else if c != '.' {
-			sb.WriteRune(c)
-		}
-	}
-	return sb.String()
+	return name[strings.LastIndexByte(name, '.')+1:]
+	// if b.isNestedType(name) {
+	// 	return name[strings.LastIndexByte(name, '.')+1:]
+	// }
+	// sb := new(strings.Builder)
+	// for i, c := range name {
+	// 	if i > 0 && name[i-1] == '.' {
+	// 		sb.WriteString(strings.ToUpper(string(c)))
+	// 	} else if c != '.' {
+	// 		sb.WriteRune(c)
+	// 	}
+	// }
+	// return sb.String()
 }
 
 func (b *contentBuilder) buildNestedTypes(messages []*descriptorpb.DescriptorProto, level int) {

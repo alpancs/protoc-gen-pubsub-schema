@@ -9,8 +9,8 @@ syntax = "proto2";
 message UserAddComment {
   required User user = 1;
   required string comment = 2;
-  repeated ExampleCommonLabel labels = 3;
-  required GoogleProtobufTimestamp timestamp = 101;
+  repeated Label labels = 3;
+  required Timestamp timestamp = 101;
 
   message User {
     required string first_name = 1;
@@ -18,8 +18,8 @@ message UserAddComment {
     required Role role = 3;
     optional bytes avatar = 4;
     optional Location location = 5;
-    optional GoogleProtobufTimestamp created_at = 6;
-    optional GoogleProtobufTimestamp updated_at = 7;
+    optional Timestamp created_at = 6;
+    optional Timestamp updated_at = 7;
 
     message Location {
       required double longitude = 1;
