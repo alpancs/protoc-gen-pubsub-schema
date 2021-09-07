@@ -32,24 +32,30 @@ func (b *contentBuilder) build(protoFile *descriptorpb.FileDescriptorProto) (str
 	fmt.Fprintln(b.output, "// 	protoc-gen-pubsub-schema v1.5.0")
 	fmt.Fprintf(b.output, "// 	protoc                   v%d.%d.%d%s\n", compVersion.GetMajor(), compVersion.GetMinor(), compVersion.GetPatch(), compVersion.GetSuffix())
 	fmt.Fprintf(b.output, "// source: %s\n\n", protoFile.GetName())
-	fmt.Fprintf(b.output, `syntax = "%s";`, b.schemaSyntax)
-	fmt.Fprint(b.output, "\n\n")
-	b.buildMessage(protoFile.GetMessageType()[0], 0)
+	fmt.Fprintf(b.output, "syntax = \"%s\";\n", b.schemaSyntax)
+	b.buildMessages(protoFile.GetMessageType(), 0)
 	b.buildEnums(protoFile.GetEnumType(), 0)
 	return b.output.String(), nil
 }
 
+func (b *contentBuilder) buildMessages(messages []*descriptorpb.DescriptorProto, level int) {
+	for _, message := range messages {
+		fmt.Fprintln(b.output)
+		b.buildMessage(message, level)
+	}
+}
+
 func (b *contentBuilder) buildMessage(message *descriptorpb.DescriptorProto, level int) {
 	fmt.Fprintf(b.output, "%smessage %s {\n", buildIndent(level), message.GetName())
-	b.buildFields(message, level+1)
-	b.buildNestedTypes(message, level+1)
+	b.buildFields(message.GetField(), level+1)
+	b.buildMessages(message.GetNestedType(), level+1)
 	b.buildEnums(message.GetEnumType(), level+1)
 	b.buildOtherTypes(message, level+1)
 	fmt.Fprintf(b.output, "%s}\n", buildIndent(level))
 }
 
-func (b *contentBuilder) buildFields(message *descriptorpb.DescriptorProto, level int) {
-	for _, field := range message.GetField() {
+func (b *contentBuilder) buildFields(fields []*descriptorpb.FieldDescriptorProto, level int) {
+	for _, field := range fields {
 		fmt.Fprint(b.output, buildIndent(level))
 		label := field.GetLabel()
 		if b.schemaSyntax == "proto2" || label == descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
@@ -74,13 +80,6 @@ func (b *contentBuilder) getFieldType(field *descriptorpb.FieldDescriptorProto) 
 		return shortName(typeName)
 	default:
 		return strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_"))
-	}
-}
-
-func (b *contentBuilder) buildNestedTypes(message *descriptorpb.DescriptorProto, level int) {
-	for _, message := range message.GetNestedType() {
-		fmt.Fprintln(b.output)
-		b.buildMessage(message, level)
 	}
 }
 
