@@ -36,6 +36,7 @@ func (b *contentBuilder) build(protoFile *descriptorpb.FileDescriptorProto) (str
 	fmt.Fprintf(b.output, `syntax = "%s";`, b.schemaSyntax)
 	b.output.WriteString("\n\n")
 	b.buildMessage("", protoFile.GetMessageType()[0], 0)
+	b.buildEnums(protoFile.GetEnumType(), 0)
 	return b.output.String(), nil
 }
 
