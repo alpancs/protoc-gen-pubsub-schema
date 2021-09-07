@@ -7,21 +7,21 @@
 syntax = "proto2";
 
 message UserAddComment {
-  required GeneratedUser user = 1;
+  required User user = 1;
   required string comment = 2;
-  repeated GeneratedLabel labels = 3;
-  required GeneratedTimestamp timestamp = 101;
+  repeated ExampleCommonLabel labels = 3;
+  required GoogleProtobufTimestamp timestamp = 101;
 
-  message GeneratedUser {
+  message User {
     required string first_name = 1;
     optional string last_name = 2;
     required Role role = 3;
     optional bytes avatar = 4;
-    optional GeneratedLocation location = 5;
-    optional GeneratedTimestamp created_at = 6;
-    optional GeneratedTimestamp updated_at = 7;
+    optional Location location = 5;
+    optional GoogleProtobufTimestamp created_at = 6;
+    optional GoogleProtobufTimestamp updated_at = 7;
 
-    message GeneratedLocation {
+    message Location {
       required double longitude = 1;
       required double latitude = 2;
     }

@@ -50,7 +50,7 @@ func (b *contentBuilder) buildMessage(prefix string, message *descriptorpb.Descr
 			field.GetNumber(),
 		)
 	}
-	// b.buildNestedTypes(message.GetNestedType(), level+1)
+	b.buildNestedTypes(message.GetNestedType(), level+1)
 	b.buildOtherTypes(message.GetField(), level+1)
 	b.buildEnums(message.GetEnumType(), level+1)
 	fmt.Fprintf(b.output, "%s}\n", buildIndent(level))
@@ -73,7 +73,7 @@ func (b *contentBuilder) getFieldType(field *descriptorpb.FieldDescriptorProto) 
 		if b.messageEncoding == "json" && wktMapping[typeName] != "" {
 			return wktMapping[typeName]
 		}
-		return "Generated" + typeName[strings.LastIndexByte(typeName, '.')+1:]
+		return b.getLocalName(typeName)
 	case descriptorpb.FieldDescriptorProto_TYPE_ENUM:
 		return typeName[strings.LastIndexByte(typeName, '.')+1:]
 	default:
@@ -81,24 +81,27 @@ func (b *contentBuilder) getFieldType(field *descriptorpb.FieldDescriptorProto) 
 	}
 }
 
-// func (b *contentBuilder) getLocalName(name string) string {
-// 	sb := new(strings.Builder)
-// 	for i, c := range name {
-// 		if i > 0 && name[i-1] == '.' {
-// 			sb.WriteString(strings.ToUpper(string(c)))
-// 		} else if c != '.' {
-// 			sb.WriteRune(c)
-// 		}
-// 	}
-// 	return sb.String()
-// }
+func (b *contentBuilder) getLocalName(name string) string {
+	if b.isNestedType(name) {
+		return name[strings.LastIndexByte(name, '.')+1:]
+	}
+	sb := new(strings.Builder)
+	for i, c := range name {
+		if i > 0 && name[i-1] == '.' {
+			sb.WriteString(strings.ToUpper(string(c)))
+		} else if c != '.' {
+			sb.WriteRune(c)
+		}
+	}
+	return sb.String()
+}
 
-// func (b *contentBuilder) buildNestedTypes(messages []*descriptorpb.DescriptorProto, level int) {
-// 	for _, message := range messages {
-// 		fmt.Fprintln(b.output)
-// 		b.buildMessage("", message, level)
-// 	}
-// }
+func (b *contentBuilder) buildNestedTypes(messages []*descriptorpb.DescriptorProto, level int) {
+	for _, message := range messages {
+		fmt.Fprintln(b.output)
+		b.buildMessage("", message, level)
+	}
+}
 
 func (b *contentBuilder) buildEnums(enums []*descriptorpb.EnumDescriptorProto, level int) {
 	for _, enum := range enums {
@@ -125,6 +128,9 @@ func (b *contentBuilder) buildOtherTypes(fields []*descriptorpb.FieldDescriptorP
 		if b.messageEncoding == "json" && wktMapping[typeName] != "" {
 			continue
 		}
+		if b.isNestedType(typeName) {
+			continue
+		}
 		if built[typeName] {
 			continue
 		}
@@ -132,6 +138,10 @@ func (b *contentBuilder) buildOtherTypes(fields []*descriptorpb.FieldDescriptorP
 		b.buildMessage("Generated", b.messageTypes[typeName], level)
 		built[typeName] = true
 	}
+}
+
+func (b *contentBuilder) isNestedType(name string) bool {
+	return b.messageTypes[name[:strings.LastIndexByte(name, '.')]] != nil
 }
 
 func buildIndent(level int) string {
