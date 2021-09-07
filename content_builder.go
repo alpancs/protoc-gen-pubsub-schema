@@ -37,6 +37,7 @@ func (b *contentBuilder) build(protoFile *descriptorpb.FileDescriptorProto) (str
 	fmt.Fprintf(b.output, `syntax = "%s";`, b.schemaSyntax)
 	b.output.WriteString("\n\n")
 	b.buildMessage(protoFile.GetMessageType()[0], 0)
+	b.buildEnums(protoFile.GetEnumType(), 0)
 	return b.output.String(), nil
 }
 
@@ -47,6 +48,7 @@ func (b *contentBuilder) buildMessage(message *descriptorpb.DescriptorProto, lev
 		debts = append(debts, b.buildField(field, level+1))
 	}
 	b.payDebts(debts, level+1)
+	b.buildEnums(message.GetEnumType(), level+1)
 	fmt.Fprintf(b.output, "%s}\n", buildIndent(level))
 }
 
@@ -119,6 +121,21 @@ func (b *contentBuilder) getLocalName(fullMessageName string) string {
 func (b *contentBuilder) isNestedType(fullMessageName string) bool {
 	parent := fullMessageName[:strings.LastIndexByte(fullMessageName, '.')]
 	return b.messageTypes[parent] != nil
+}
+
+func (b *contentBuilder) buildEnums(enums []*descriptorpb.EnumDescriptorProto, level int) {
+	for _, enum := range enums {
+		fmt.Fprintln(b.output)
+		b.buildEnum(enum, level)
+	}
+}
+
+func (b *contentBuilder) buildEnum(enum *descriptorpb.EnumDescriptorProto, level int) {
+	fmt.Fprintf(b.output, "%senum %s {\n", buildIndent(level), enum.GetName())
+	for _, value := range enum.GetValue() {
+		fmt.Fprintf(b.output, "%s%s = %d;", buildIndent(level+1), value.GetName(), value.GetNumber())
+	}
+	fmt.Fprintf(b.output, "%s}\n", buildIndent(level))
 }
 
 func buildIndent(level int) string {
