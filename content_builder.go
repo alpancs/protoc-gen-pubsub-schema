@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"regexp"
 	"strings"
 
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -36,46 +35,25 @@ func (b *contentBuilder) build(protoFile *descriptorpb.FileDescriptorProto) (str
 	fmt.Fprintln(b.output, "")
 	fmt.Fprintf(b.output, `syntax = "%s";`, b.schemaSyntax)
 	b.output.WriteString("\n\n")
-	b.buildMessage(protoFile.GetMessageType()[0], 0)
-	b.buildEnums(protoFile.GetEnumType(), 0)
+	b.buildMessage("", protoFile.GetMessageType()[0], 0)
 	return b.output.String(), nil
 }
 
-func (b *contentBuilder) buildMessage(message *descriptorpb.DescriptorProto, level int) {
-	fmt.Fprintf(b.output, "%smessage %s {\n", buildIndent(level), message.GetName())
-	debts := []string(nil)
+func (b *contentBuilder) buildMessage(prefix string, message *descriptorpb.DescriptorProto, level int) {
+	fmt.Fprintf(b.output, "%smessage %s%s {\n", buildIndent(level), prefix, message.GetName())
 	for _, field := range message.GetField() {
-		debts = append(debts, b.buildField(field, level+1))
+		fmt.Fprintf(b.output, "%s%s%s %s = %d;\n",
+			buildIndent(level+1),
+			b.getLabelPrefix(field.GetLabel()),
+			b.getFieldType(field),
+			field.GetName(),
+			field.GetNumber(),
+		)
 	}
-	b.payDebts(debts, level+1)
+	// b.buildNestedTypes(message.GetNestedType(), level+1)
+	b.buildOtherTypes(message.GetField(), level+1)
 	b.buildEnums(message.GetEnumType(), level+1)
 	fmt.Fprintf(b.output, "%s}\n", buildIndent(level))
-}
-
-func (b *contentBuilder) buildField(field *descriptorpb.FieldDescriptorProto, level int) string {
-	fieldType, debt := b.getFieldType(field)
-	fmt.Fprintf(b.output, "%s%s%s %s = %d;\n",
-		buildIndent(level),
-		b.getLabelPrefix(field.GetLabel()),
-		fieldType,
-		field.GetName(),
-		field.GetNumber(),
-	)
-	return debt
-}
-
-func (b *contentBuilder) getFieldType(field *descriptorpb.FieldDescriptorProto) (string, string) {
-	fullMessageName := field.GetTypeName()
-	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		if b.messageEncoding == "json" && wktMapping[fullMessageName] != "" {
-			return wktMapping[fullMessageName], ""
-		}
-		return b.getLocalName(fullMessageName), fullMessageName
-	}
-	if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
-		return b.getLocalName(fullMessageName), ""
-	}
-	return strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_")), ""
 }
 
 func (b *contentBuilder) getLabelPrefix(label descriptorpb.FieldDescriptorProto_Label) string {
@@ -88,41 +66,39 @@ func (b *contentBuilder) getLabelPrefix(label descriptorpb.FieldDescriptorProto_
 	return ""
 }
 
-func (b *contentBuilder) payDebts(debts []string, level int) {
-	payedDebts := make(map[string]bool)
-	for _, debt := range debts {
-		if debt != "" && !payedDebts[debt] {
-			b.payDebt(debt, level)
-			payedDebts[debt] = true
+func (b *contentBuilder) getFieldType(field *descriptorpb.FieldDescriptorProto) string {
+	typeName := field.GetTypeName()
+	switch field.GetType() {
+	case descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
+		if b.messageEncoding == "json" && wktMapping[typeName] != "" {
+			return wktMapping[typeName]
 		}
+		return "Generated" + typeName[strings.LastIndexByte(typeName, '.')+1:]
+	case descriptorpb.FieldDescriptorProto_TYPE_ENUM:
+		return typeName[strings.LastIndexByte(typeName, '.')+1:]
+	default:
+		return strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_"))
 	}
 }
 
-func (b *contentBuilder) payDebt(debt string, level int) {
-	message := b.messageTypes[debt]
-	defer func(originalName *string) { message.Name = originalName }(message.Name)
-	localName := b.getLocalName(debt)
-	message.Name = &localName
-	b.output.WriteString("\n")
-	b.buildMessage(message, level)
-}
+// func (b *contentBuilder) getLocalName(name string) string {
+// 	sb := new(strings.Builder)
+// 	for i, c := range name {
+// 		if i > 0 && name[i-1] == '.' {
+// 			sb.WriteString(strings.ToUpper(string(c)))
+// 		} else if c != '.' {
+// 			sb.WriteRune(c)
+// 		}
+// 	}
+// 	return sb.String()
+// }
 
-var localNamePattern = regexp.MustCompile(`\..`)
-
-func (b *contentBuilder) getLocalName(fullMessageName string) string {
-	if b.isNestedType(fullMessageName) {
-		return fullMessageName[strings.LastIndexByte(fullMessageName, '.')+1:]
-	}
-	return localNamePattern.ReplaceAllStringFunc(
-		fullMessageName,
-		func(s string) string { return strings.ToUpper(s[1:]) },
-	)
-}
-
-func (b *contentBuilder) isNestedType(fullMessageName string) bool {
-	parent := fullMessageName[:strings.LastIndexByte(fullMessageName, '.')]
-	return b.messageTypes[parent] != nil
-}
+// func (b *contentBuilder) buildNestedTypes(messages []*descriptorpb.DescriptorProto, level int) {
+// 	for _, message := range messages {
+// 		fmt.Fprintln(b.output)
+// 		b.buildMessage("", message, level)
+// 	}
+// }
 
 func (b *contentBuilder) buildEnums(enums []*descriptorpb.EnumDescriptorProto, level int) {
 	for _, enum := range enums {
@@ -137,6 +113,25 @@ func (b *contentBuilder) buildEnum(enum *descriptorpb.EnumDescriptorProto, level
 		fmt.Fprintf(b.output, "%s%s = %d;\n", buildIndent(level+1), value.GetName(), value.GetNumber())
 	}
 	fmt.Fprintf(b.output, "%s}\n", buildIndent(level))
+}
+
+func (b *contentBuilder) buildOtherTypes(fields []*descriptorpb.FieldDescriptorProto, level int) {
+	built := make(map[string]bool)
+	for _, field := range fields {
+		typeName := field.GetTypeName()
+		if field.GetType() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+			continue
+		}
+		if b.messageEncoding == "json" && wktMapping[typeName] != "" {
+			continue
+		}
+		if built[typeName] {
+			continue
+		}
+		fmt.Fprintln(b.output)
+		b.buildMessage("Generated", b.messageTypes[typeName], level)
+		built[typeName] = true
+	}
 }
 
 func buildIndent(level int) string {
