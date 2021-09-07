@@ -51,8 +51,8 @@ func (b *contentBuilder) buildMessage(prefix string, message *descriptorpb.Descr
 		)
 	}
 	b.buildNestedTypes(message.GetNestedType(), level+1)
-	b.buildOtherTypes(message.GetField(), level+1)
 	b.buildEnums(message.GetEnumType(), level+1)
+	b.buildOtherTypes(message.GetField(), level+1)
 	fmt.Fprintf(b.output, "%s}\n", buildIndent(level))
 }
 
