@@ -8,31 +8,30 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
-type protoFilesType map[string]*descriptorpb.FileDescriptorProto
-type messageTypesType map[string]*descriptorpb.DescriptorProto
-type enumsType map[string]*descriptorpb.EnumDescriptorProto
-
 type responseBuilder struct {
 	request         *pluginpb.CodeGeneratorRequest
 	schemaSyntax    string
 	messageEncoding string
-	protoFiles      protoFilesType
-	messageTypes    messageTypesType
-	enums           enumsType
+	protoFiles      map[string]*descriptorpb.FileDescriptorProto
+	messageTypes    map[string]*descriptorpb.DescriptorProto
+	enums           map[string]*descriptorpb.EnumDescriptorProto
 }
 
 func newResponseBuilder(request *pluginpb.CodeGeneratorRequest) (*responseBuilder, error) {
 	if request == nil {
 		return nil, errors.New("newResponseBuilder(request *pluginpb.CodeGeneratorRequest): request is nil")
 	}
-	return &responseBuilder{
+	builder := &responseBuilder{
 		request,
 		getSyntax(request),
 		getEncoding(request),
-		getProtoFiles(request),
-		getMessageTypes(request),
-		getEnums(request),
-	}, nil
+		make(map[string]*descriptorpb.FileDescriptorProto),
+		make(map[string]*descriptorpb.DescriptorProto),
+		make(map[string]*descriptorpb.EnumDescriptorProto),
+	}
+	builder.initProtoFiles()
+	builder.initTypes()
+	return builder, nil
 }
 
 func getSyntax(request *pluginpb.CodeGeneratorRequest) string {
@@ -49,49 +48,38 @@ func getEncoding(request *pluginpb.CodeGeneratorRequest) string {
 	return "binary"
 }
 
-func getProtoFiles(request *pluginpb.CodeGeneratorRequest) protoFilesType {
-	protoFiles := make(protoFilesType)
-	for _, protoFile := range request.GetProtoFile() {
-		protoFiles[protoFile.GetName()] = protoFile
+func (b *responseBuilder) initProtoFiles() {
+	for _, protoFile := range b.request.GetProtoFile() {
+		b.protoFiles[protoFile.GetName()] = protoFile
 	}
-	return protoFiles
 }
 
-func getMessageTypes(request *pluginpb.CodeGeneratorRequest) messageTypesType {
-	messageTypes := make(messageTypesType)
-	for _, protoFile := range request.GetProtoFile() {
-		messageTypes.setUsingFile(protoFile)
+func (b *responseBuilder) initTypes() {
+	for _, protoFile := range b.request.GetProtoFile() {
+		b.initTypesInFile(protoFile)
 	}
-	return messageTypes
 }
 
-func (ms messageTypesType) setUsingFile(file *descriptorpb.FileDescriptorProto) {
+func (b *responseBuilder) initTypesInFile(file *descriptorpb.FileDescriptorProto) {
 	packageName := strings.TrimSuffix("."+file.GetPackage(), ".")
 	for _, m := range file.GetMessageType() {
-		ms.setUsingMessage(packageName+".", m)
+		messageName := packageName + "." + m.GetName()
+		b.messageTypes[messageName] = m
+		b.initTypesInMessage(messageName, m)
+	}
+	for _, e := range file.GetEnumType() {
+		b.enums[packageName+"."+e.GetName()] = e
 	}
 }
 
-func (ms messageTypesType) setUsingMessage(namePrefix string, message *descriptorpb.DescriptorProto) {
-	fullMessageName := namePrefix + message.GetName()
-	ms[fullMessageName] = message
+func (b *responseBuilder) initTypesInMessage(parentName string, message *descriptorpb.DescriptorProto) {
 	for _, m := range message.GetNestedType() {
-		ms.setUsingMessage(fullMessageName+".", m)
+		messageName := parentName + "." + m.GetName()
+		b.messageTypes[messageName] = m
+		b.initTypesInMessage(messageName, m)
 	}
-}
-
-func getEnums(request *pluginpb.CodeGeneratorRequest) enumsType {
-	enums := make(enumsType)
-	for _, protoFile := range request.GetProtoFile() {
-		enums.setUsingFile(protoFile)
-	}
-	return enums
-}
-
-func (es enumsType) setUsingFile(file *descriptorpb.FileDescriptorProto) {
-	packageName := strings.TrimSuffix("."+file.GetPackage(), ".")
-	for _, enum := range file.GetEnumType() {
-		es[packageName+"."+enum.GetName()] = enum
+	for _, e := range message.GetEnumType() {
+		b.enums[parentName+"."+e.GetName()] = e
 	}
 }
 
