@@ -10,6 +10,7 @@ import (
 
 type protoFilesType map[string]*descriptorpb.FileDescriptorProto
 type messageTypesType map[string]*descriptorpb.DescriptorProto
+type enumsType map[string]*descriptorpb.EnumDescriptorProto
 
 type responseBuilder struct {
 	request         *pluginpb.CodeGeneratorRequest
@@ -17,6 +18,7 @@ type responseBuilder struct {
 	messageEncoding string
 	protoFiles      protoFilesType
 	messageTypes    messageTypesType
+	enums           enumsType
 }
 
 func newResponseBuilder(request *pluginpb.CodeGeneratorRequest) (*responseBuilder, error) {
@@ -29,6 +31,7 @@ func newResponseBuilder(request *pluginpb.CodeGeneratorRequest) (*responseBuilde
 		getEncoding(request),
 		getProtoFiles(request),
 		getMessageTypes(request),
+		getEnums(request),
 	}, nil
 }
 
@@ -74,6 +77,21 @@ func (ms messageTypesType) setUsingMessage(namePrefix string, message *descripto
 	ms[fullMessageName] = message
 	for _, m := range message.GetNestedType() {
 		ms.setUsingMessage(fullMessageName+".", m)
+	}
+}
+
+func getEnums(request *pluginpb.CodeGeneratorRequest) enumsType {
+	enums := make(enumsType)
+	for _, protoFile := range request.GetProtoFile() {
+		enums.setUsingFile(protoFile)
+	}
+	return enums
+}
+
+func (es enumsType) setUsingFile(file *descriptorpb.FileDescriptorProto) {
+	packageName := strings.TrimSuffix("."+file.GetPackage(), ".")
+	for _, enum := range file.GetEnumType() {
+		es[packageName+"."+enum.GetName()] = enum
 	}
 }
 

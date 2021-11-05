@@ -3,6 +3,7 @@ syntax = "proto2";
 package example;
 
 import "example/common/label.proto";
+import "example/common/role.proto";
 import "google/protobuf/timestamp.proto";
 
 message UserAddComment {
@@ -14,7 +15,7 @@ message UserAddComment {
   message User {
     required string first_name = 1;
     optional string last_name = 2;
-    required Role role = 3;
+    required example.common.Role role = 3;
     optional bytes avatar = 4;
     optional Location location = 5;
     optional google.protobuf.Timestamp created_at = 6;
@@ -23,12 +24,6 @@ message UserAddComment {
     message Location {
       required double longitude = 1;
       required double latitude = 2;
-    }
-
-    enum Role {
-      OWNER = 1;
-      EDITOR = 2;
-      VIEWER = 3;
     }
   }
 }
