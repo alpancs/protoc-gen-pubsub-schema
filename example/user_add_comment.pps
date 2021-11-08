@@ -6,6 +6,8 @@
 
 syntax = "proto2";
 
+package example;
+
 message UserAddComment {
   required User user = 1;
   required string comment = 2;

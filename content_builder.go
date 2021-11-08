@@ -32,7 +32,8 @@ func (b *contentBuilder) build(protoFile *descriptorpb.FileDescriptorProto) (str
 	fmt.Fprintf(b.output, "// 	protoc-gen-pubsub-schema v1.4.4\n")
 	fmt.Fprintf(b.output, "// 	protoc                   v%d.%d.%d%s\n", compVersion.GetMajor(), compVersion.GetMinor(), compVersion.GetPatch(), compVersion.GetSuffix())
 	fmt.Fprintf(b.output, "// source: %s\n\n", protoFile.GetName())
-	fmt.Fprintf(b.output, "syntax = \"%s\";\n", b.schemaSyntax)
+	fmt.Fprintf(b.output, "syntax = \"%s\";\n\n", b.schemaSyntax)
+	fmt.Fprintf(b.output, "package %s;\n", protoFile.GetPackage())
 	b.buildMessages(protoFile.GetMessageType(), 0)
 	b.buildEnums(protoFile.GetEnumType(), 0)
 	return b.output.String(), nil
