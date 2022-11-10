@@ -2,27 +2,27 @@ name: Go
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-go@v2
-      with:
-        go-version: '^1.17'
-    - uses: arduino/setup-protoc@v1
-      with:
-        version: '3.19.1'
-    - name: Run go test
-      run: go test -v ./...
-    - name: Install protoc-gen-pubsub-schema
-      run: go install
-    - name: Run examples
-      run: protoc example/user_add_comment.proto --pubsub-schema_out=.
-    - name: Verify examples are working
-      run: if [ -n "$(git status --porcelain)" ]; then git status; exit 1; fi
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: "1.18"
+      - uses: arduino/setup-protoc@v1
+        with:
+          version: "3.x"
+      - name: Run go test
+        run: go test -v ./...
+      - name: Install protoc-gen-pubsub-schema
+        run: go install
+      - name: Run examples
+        run: protoc example/article_commented.proto --pubsub-schema_out=.
+      - name: Verify examples are working
+        run: if [ -n "$(git status --porcelain)" ]; then git status; exit 1; fi

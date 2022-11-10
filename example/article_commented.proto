@@ -1,0 +1,38 @@
+syntax = "proto2";
+
+package example;
+
+import "example/common/label.proto";
+import "example/common/role.proto";
+import "google/protobuf/timestamp.proto";
+
+message ArticleCommented {
+  required string article_id = 1;
+  required User user = 2;
+  required string comment = 3;
+  repeated example.common.Label labels = 4;
+  required google.protobuf.Timestamp timestamp = 101;
+
+  message User {
+    required string first_name = 1;
+    optional string last_name = 2;
+    required InternalRole internal_role = 3;
+    required example.common.Role external_role_major = 4;
+    required example.common.Role external_role_minor = 5;
+    optional bytes avatar = 6;
+    optional Location location = 7;
+    optional google.protobuf.Timestamp created_at = 8;
+    optional google.protobuf.Timestamp updated_at = 9;
+  }
+
+  message Location {
+    required double longitude = 1;
+    required double latitude = 2;
+  }
+
+  enum InternalRole {
+    OWNER = 0;
+    EDITOR = 1;
+    VIEWER = 2;
+  }
+}
