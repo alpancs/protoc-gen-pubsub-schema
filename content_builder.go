@@ -36,24 +36,24 @@ func (b *contentBuilder) build() (string, error) {
 	fmt.Fprintf(b.output, "// source: %s\n\n", b.file.GetName())
 	fmt.Fprintf(b.output, "syntax = \"%s\";\n\n", b.schemaSyntax)
 	fmt.Fprintf(b.output, "package %s;\n", b.file.GetPackage())
-	b.buildMessages(b.file.GetMessageType(), 0)
-	b.buildEnums(b.file.GetEnumType(), 0)
+	b.buildMessages(0, b.file.GetMessageType())
+	b.buildEnums(0, b.file.GetEnumType())
 	return b.output.String(), nil
 }
 
-func (b *contentBuilder) buildMessages(messages []*descriptorpb.DescriptorProto, level int) {
+func (b *contentBuilder) buildMessages(level int, messages []*descriptorpb.DescriptorProto) {
 	built := make(map[*descriptorpb.DescriptorProto]bool)
 	for _, message := range messages {
 		if built[message] {
 			continue
 		}
 		fmt.Fprintln(b.output)
-		newMessageBuilder(b, message, level).build()
+		newMessageBuilder(b, level, message).build()
 		built[message] = true
 	}
 }
 
-func (b *contentBuilder) buildEnums(enums []*descriptorpb.EnumDescriptorProto, level int) {
+func (b *contentBuilder) buildEnums(level int, enums []*descriptorpb.EnumDescriptorProto) {
 	built := make(map[*descriptorpb.EnumDescriptorProto]bool)
 	for _, enum := range enums {
 		if built[enum] {

@@ -9,23 +9,21 @@ import (
 
 type messageBuilder struct {
 	*contentBuilder
-	message          *descriptorpb.DescriptorProto
 	level            int
+	message          *descriptorpb.DescriptorProto
 	externalMessages []*descriptorpb.DescriptorProto
 	externalEnums    []*descriptorpb.EnumDescriptorProto
 }
 
-func newMessageBuilder(b *contentBuilder, message *descriptorpb.DescriptorProto, level int) *messageBuilder {
-	return &messageBuilder{b, message, level, nil, nil}
+func newMessageBuilder(b *contentBuilder, level int, message *descriptorpb.DescriptorProto) *messageBuilder {
+	return &messageBuilder{b, level, message, nil, nil}
 }
 
 func (b *messageBuilder) build() {
 	fmt.Fprintf(b.output, "%smessage %s {\n", buildIndent(b.level), b.message.GetName())
 	b.buildFields()
-	b.buildMessages(b.message.GetNestedType(), b.level+1)
-	b.buildEnums(b.message.GetEnumType(), b.level+1)
-	b.buildMessages(b.externalMessages, b.level+1)
-	b.buildEnums(b.externalEnums, b.level+1)
+	b.buildMessages(b.level+1, append(b.message.GetNestedType(), b.externalMessages...))
+	b.buildEnums(b.level+1, append(b.message.GetEnumType(), b.externalEnums...))
 	fmt.Fprintf(b.output, "%s}\n", buildIndent(b.level))
 }
 

@@ -43,12 +43,6 @@ message ArticleCommented {
     required double latitude = 2;
   }
 
-  enum InternalRole {
-    OWNER = 0;
-    EDITOR = 1;
-    VIEWER = 2;
-  }
-
   message ExampleCommonLabel {
     optional string key = 1;
     optional string value = 2;
@@ -57,5 +51,11 @@ message ArticleCommented {
   message GoogleProtobufTimestamp {
     optional int64 seconds = 1;
     optional int32 nanos = 2;
+  }
+
+  enum InternalRole {
+    OWNER = 0;
+    EDITOR = 1;
+    VIEWER = 2;
   }
 }
