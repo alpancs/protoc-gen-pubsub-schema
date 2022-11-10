@@ -78,9 +78,12 @@ func getChildName(name string) string {
 func pascalCase(name string) string {
 	sb := new(strings.Builder)
 	for i, c := range name {
-		if i > 0 && name[i-1] == '.' {
+		if c == '.' || c == '_' || c == '-' {
+			continue
+		}
+		if i > 0 && (name[i-1] == '.' || name[i-1] == '_' || name[i-1] == '-') {
 			sb.WriteString(strings.ToUpper(string(c)))
-		} else if c != '.' {
+		} else {
 			sb.WriteRune(c)
 		}
 	}
