@@ -5,25 +5,27 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 type contentBuilder struct {
 	*responseBuilder
+	file   *descriptorpb.FileDescriptorProto
 	output *strings.Builder
 }
 
-func newContentBuilder(b *responseBuilder) *contentBuilder {
-	return &contentBuilder{b, new(strings.Builder)}
+func newContentBuilder(b *responseBuilder, file *descriptorpb.FileDescriptorProto) *contentBuilder {
+	return &contentBuilder{b, file, new(strings.Builder)}
 }
 
-func (b *contentBuilder) build(protoFile *descriptorpb.FileDescriptorProto) (string, error) {
-	if protoFile == nil {
-		return "", errors.New("build(protoFile *descriptorpb.FileDescriptorProto): protoFile is nil")
+func (b *contentBuilder) build() (string, error) {
+	if b.file == nil {
+		return "", errors.New("contentBuilder.build(): protoFile is nil")
 	}
 
-	if len(protoFile.GetMessageType()) != 1 {
-		return "", errors.New(protoFile.GetName() + ": only one top-level type may be defined in a file (see https://cloud.google.com/pubsub/docs/schemas#schema_types). use nested types or imports (see https://developers.google.com/protocol-buffers/docs/proto)")
+	if len(b.file.GetMessageType()) != 1 {
+		return "", errors.New(b.file.GetName() + ": only one top-level type may be defined in a file (see https://cloud.google.com/pubsub/docs/schemas#schema_types). use nested types or imports (see https://developers.google.com/protocol-buffers/docs/proto)")
 	}
 
 	compVersion := b.request.GetCompilerVersion()
@@ -31,11 +33,11 @@ func (b *contentBuilder) build(protoFile *descriptorpb.FileDescriptorProto) (str
 	fmt.Fprintf(b.output, "// versions:\n")
 	fmt.Fprintf(b.output, "// 	protoc-gen-pubsub-schema v1.5.0\n")
 	fmt.Fprintf(b.output, "// 	protoc                   v%d.%d.%d%s\n", compVersion.GetMajor(), compVersion.GetMinor(), compVersion.GetPatch(), compVersion.GetSuffix())
-	fmt.Fprintf(b.output, "// source: %s\n\n", protoFile.GetName())
+	fmt.Fprintf(b.output, "// source: %s\n\n", b.file.GetName())
 	fmt.Fprintf(b.output, "syntax = \"%s\";\n\n", b.schemaSyntax)
-	fmt.Fprintf(b.output, "package %s;\n", protoFile.GetPackage())
-	b.buildMessages(protoFile.GetMessageType(), 0)
-	b.buildEnums(protoFile.GetEnumType(), 0)
+	fmt.Fprintf(b.output, "package %s;\n", b.file.GetPackage())
+	b.buildMessages(b.file.GetMessageType(), 0)
+	b.buildEnums(b.file.GetEnumType(), 0)
 	return b.output.String(), nil
 }
 
@@ -65,6 +67,10 @@ func (b *contentBuilder) buildEnums(enums []*descriptorpb.EnumDescriptorProto, l
 		fmt.Fprintf(b.output, "%s}\n", buildIndent(level))
 		built[enum] = true
 	}
+}
+
+func (b *contentBuilder) isInternalMessage(field *descriptorpb.FieldDescriptorProto) bool {
+	return field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE && slices.Contains(b.fileMsgTypes[b.file], field.GetTypeName())
 }
 
 func buildIndent(level int) string {

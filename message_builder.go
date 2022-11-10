@@ -22,6 +22,8 @@ func newMessageBuilder(b *contentBuilder, message *descriptorpb.DescriptorProto,
 func (b *messageBuilder) build() {
 	fmt.Fprintf(b.output, "%smessage %s {\n", buildIndent(b.level), b.message.GetName())
 	b.buildFields()
+	b.buildMessages(b.message.GetNestedType(), b.level+1)
+	b.buildEnums(b.message.GetEnumType(), b.level+1)
 	b.buildMessages(b.externalMessages, b.level+1)
 	b.buildEnums(b.externalEnums, b.level+1)
 	fmt.Fprintf(b.output, "%s}\n", buildIndent(b.level))
@@ -39,22 +41,23 @@ func (b *messageBuilder) buildFields() {
 }
 
 func (b *messageBuilder) buildFieldType(field *descriptorpb.FieldDescriptorProto) string {
-	typeName := field.GetTypeName()
-	switch field.GetType() {
-	case descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
-		if b.messageEncoding == "json" && wktMapping[typeName] != "" {
-			return wktMapping[typeName]
+	switch {
+	case b.isInternalMessage(field):
+		return getChildName(field.GetTypeName())
+	case field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
+		if b.messageEncoding == "json" && wktMapping[field.GetTypeName()] != "" {
+			return wktMapping[field.GetTypeName()]
 		}
-		internalName := pascalCase(typeName)
-		internalMessage := b.messageTypes[field.GetTypeName()]
-		internalMessage.Name = &internalName
-		b.externalMessages = append(b.externalMessages, internalMessage)
+		internalName := pascalCase(field.GetTypeName())
+		message := b.messageTypes[field.GetTypeName()]
+		message.Name = &internalName
+		b.externalMessages = append(b.externalMessages, message)
 		return internalName
-	case descriptorpb.FieldDescriptorProto_TYPE_ENUM:
-		internalName := pascalCase(typeName)
-		internalEnum := b.enums[field.GetTypeName()]
-		internalEnum.Name = &internalName
-		b.externalEnums = append(b.externalEnums, internalEnum)
+	case field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM:
+		internalName := pascalCase(field.GetTypeName())
+		enum := b.enums[field.GetTypeName()]
+		enum.Name = &internalName
+		b.externalEnums = append(b.externalEnums, enum)
 		return internalName
 	default:
 		return strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_"))

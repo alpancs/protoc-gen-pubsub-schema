@@ -15,6 +15,7 @@ type responseBuilder struct {
 	protoFiles      map[string]*descriptorpb.FileDescriptorProto
 	messageTypes    map[string]*descriptorpb.DescriptorProto
 	enums           map[string]*descriptorpb.EnumDescriptorProto
+	fileMsgTypes    map[*descriptorpb.FileDescriptorProto][]string
 }
 
 func newResponseBuilder(request *pluginpb.CodeGeneratorRequest) (*responseBuilder, error) {
@@ -28,6 +29,7 @@ func newResponseBuilder(request *pluginpb.CodeGeneratorRequest) (*responseBuilde
 		make(map[string]*descriptorpb.FileDescriptorProto),
 		make(map[string]*descriptorpb.DescriptorProto),
 		make(map[string]*descriptorpb.EnumDescriptorProto),
+		make(map[*descriptorpb.FileDescriptorProto][]string),
 	}
 	builder.initProtoFiles()
 	builder.initTypes()
@@ -65,18 +67,20 @@ func (b *responseBuilder) initTypesInFile(file *descriptorpb.FileDescriptorProto
 	for _, m := range file.GetMessageType() {
 		messageName := packageName + "." + m.GetName()
 		b.messageTypes[messageName] = m
-		b.initTypesInMessage(messageName, m)
+		b.fileMsgTypes[file] = append(b.fileMsgTypes[file], messageName)
+		b.initTypesInMessage(file, messageName, m)
 	}
 	for _, e := range file.GetEnumType() {
 		b.enums[packageName+"."+e.GetName()] = e
 	}
 }
 
-func (b *responseBuilder) initTypesInMessage(parentName string, message *descriptorpb.DescriptorProto) {
+func (b *responseBuilder) initTypesInMessage(file *descriptorpb.FileDescriptorProto, parentName string, message *descriptorpb.DescriptorProto) {
 	for _, m := range message.GetNestedType() {
 		messageName := parentName + "." + m.GetName()
 		b.messageTypes[messageName] = m
-		b.initTypesInMessage(messageName, m)
+		b.fileMsgTypes[file] = append(b.fileMsgTypes[file], messageName)
+		b.initTypesInMessage(file, messageName, m)
 	}
 	for _, e := range message.GetEnumType() {
 		b.enums[parentName+"."+e.GetName()] = e
@@ -99,7 +103,7 @@ func (b *responseBuilder) build() *pluginpb.CodeGeneratorResponse {
 
 func (b *responseBuilder) buildFile(reqFileName string) (*pluginpb.CodeGeneratorResponse_File, error) {
 	respFileName := strings.TrimSuffix(reqFileName, ".proto") + ".pps"
-	content, err := newContentBuilder(b).build(b.protoFiles[reqFileName])
+	content, err := newContentBuilder(b, b.protoFiles[reqFileName]).build()
 	return &pluginpb.CodeGeneratorResponse_File{
 		Name:    &respFileName,
 		Content: &content,
