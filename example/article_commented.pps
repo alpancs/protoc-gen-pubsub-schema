@@ -2,16 +2,17 @@
 // versions:
 // 	protoc-gen-pubsub-schema v1.5.0
 // 	protoc                   v3.21.9
-// source: example/user_add_comment.proto
+// source: example/article_commented.proto
 
 syntax = "proto2";
 
 package example;
 
-message UserAddComment {
-  required User user = 1;
-  required string comment = 2;
-  repeated ExampleCommonLabel labels = 3;
+message ArticleCommented {
+  required string article_id = 1;
+  required User user = 2;
+  required string comment = 3;
+  repeated ExampleCommonLabel labels = 4;
   required GoogleProtobufTimestamp timestamp = 101;
 
   message User {

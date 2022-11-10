@@ -6,10 +6,11 @@ import "example/common/label.proto";
 import "example/common/role.proto";
 import "google/protobuf/timestamp.proto";
 
-message UserAddComment {
-  required User user = 1;
-  required string comment = 2;
-  repeated example.common.Label labels = 3;
+message ArticleCommented {
+  required string article_id = 1;
+  required User user = 2;
+  required string comment = 3;
+  repeated example.common.Label labels = 4;
   required google.protobuf.Timestamp timestamp = 101;
 
   message User {
