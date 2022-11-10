@@ -20,6 +20,8 @@ func newMessageBuilder(b *contentBuilder, message *descriptorpb.DescriptorProto,
 }
 
 func (b *messageBuilder) build() {
+	b.message.NestedType = nil
+	b.message.EnumType = nil
 	fmt.Fprintf(b.output, "%smessage %s {\n", buildIndent(b.level), b.message.GetName())
 	b.buildFields()
 	b.buildMessages(b.message.GetNestedType(), b.level+1)
@@ -40,9 +42,6 @@ func (b *messageBuilder) buildFields() {
 
 func (b *messageBuilder) buildFieldType(field *descriptorpb.FieldDescriptorProto) string {
 	typeName := field.GetTypeName()
-	if b.isNestedType(field) {
-		return getChildName(typeName)
-	}
 	switch field.GetType() {
 	case descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
 		if b.messageEncoding == "json" && wktMapping[typeName] != "" {
@@ -62,10 +61,6 @@ func (b *messageBuilder) buildFieldType(field *descriptorpb.FieldDescriptorProto
 	default:
 		return strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_"))
 	}
-}
-
-func (b *messageBuilder) isNestedType(field *descriptorpb.FieldDescriptorProto) bool {
-	return b.messageTypes[getParentName(field.GetTypeName())] == b.message
 }
 
 func getParentName(name string) string {
