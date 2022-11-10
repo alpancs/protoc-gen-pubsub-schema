@@ -23,6 +23,6 @@ jobs:
       - name: Install protoc-gen-pubsub-schema
         run: go install
       - name: Run examples
-        run: protoc example/user_add_comment.proto --pubsub-schema_out=.
+        run: protoc example/article_commented.proto --pubsub-schema_out=.
       - name: Verify examples are working
         run: if [ -n "$(git status --porcelain)" ]; then git status; exit 1; fi
