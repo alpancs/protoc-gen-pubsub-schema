@@ -24,11 +24,6 @@ message ArticleCommented {
     optional GoogleProtobufTimestamp created_at = 6;
     optional GoogleProtobufTimestamp updated_at = 7;
 
-    message Location {
-      required double longitude = 1;
-      required double latitude = 2;
-    }
-
     message GoogleProtobufTimestamp {
       optional int64 seconds = 1;
       optional int32 nanos = 2;
@@ -39,6 +34,11 @@ message ArticleCommented {
       EDITOR = 1;
       VIEWER = 2;
     }
+  }
+
+  message Location {
+    required double longitude = 1;
+    required double latitude = 2;
   }
 
   message ExampleCommonLabel {

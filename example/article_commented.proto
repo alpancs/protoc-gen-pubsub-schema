@@ -21,10 +21,10 @@ message ArticleCommented {
     optional Location location = 5;
     optional google.protobuf.Timestamp created_at = 6;
     optional google.protobuf.Timestamp updated_at = 7;
+  }
 
-    message Location {
-      required double longitude = 1;
-      required double latitude = 2;
-    }
+  message Location {
+    required double longitude = 1;
+    required double latitude = 2;
   }
 }
