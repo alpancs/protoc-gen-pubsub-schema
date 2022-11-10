@@ -20,12 +20,10 @@ func newMessageBuilder(b *contentBuilder, message *descriptorpb.DescriptorProto,
 }
 
 func (b *messageBuilder) build() {
-	b.message.NestedType = nil
-	b.message.EnumType = nil
 	fmt.Fprintf(b.output, "%smessage %s {\n", buildIndent(b.level), b.message.GetName())
 	b.buildFields()
-	b.buildMessages(b.message.GetNestedType(), b.level+1)
-	b.buildEnums(b.message.GetEnumType(), b.level+1)
+	b.buildMessages(b.externalMessages, b.level+1)
+	b.buildEnums(b.externalEnums, b.level+1)
 	fmt.Fprintf(b.output, "%s}\n", buildIndent(b.level))
 }
 
@@ -50,13 +48,13 @@ func (b *messageBuilder) buildFieldType(field *descriptorpb.FieldDescriptorProto
 		internalName := pascalCase(typeName)
 		internalMessage := b.messageTypes[field.GetTypeName()]
 		internalMessage.Name = &internalName
-		b.message.NestedType = append(b.message.NestedType, internalMessage)
+		b.externalMessages = append(b.externalMessages, internalMessage)
 		return internalName
 	case descriptorpb.FieldDescriptorProto_TYPE_ENUM:
 		internalName := pascalCase(typeName)
 		internalEnum := b.enums[field.GetTypeName()]
 		internalEnum.Name = &internalName
-		b.message.EnumType = append(b.message.EnumType, internalEnum)
+		b.externalEnums = append(b.externalEnums, internalEnum)
 		return internalName
 	default:
 		return strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_"))
