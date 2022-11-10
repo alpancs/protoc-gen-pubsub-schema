@@ -15,7 +15,7 @@ type responseBuilder struct {
 	protoFiles      map[string]*descriptorpb.FileDescriptorProto
 	messageTypes    map[string]*descriptorpb.DescriptorProto
 	enums           map[string]*descriptorpb.EnumDescriptorProto
-	fileMsgTypes    map[*descriptorpb.FileDescriptorProto][]string
+	fileTypeNames   map[*descriptorpb.FileDescriptorProto][]string
 }
 
 func newResponseBuilder(request *pluginpb.CodeGeneratorRequest) (*responseBuilder, error) {
@@ -65,25 +65,29 @@ func (b *responseBuilder) initTypes() {
 func (b *responseBuilder) initTypesInFile(file *descriptorpb.FileDescriptorProto) {
 	packageName := strings.TrimSuffix("."+file.GetPackage(), ".")
 	for _, m := range file.GetMessageType() {
-		messageName := packageName + "." + m.GetName()
-		b.messageTypes[messageName] = m
-		b.fileMsgTypes[file] = append(b.fileMsgTypes[file], messageName)
-		b.initTypesInMessage(file, messageName, m)
+		fullName := packageName + "." + m.GetName()
+		b.messageTypes[fullName] = m
+		b.fileTypeNames[file] = append(b.fileTypeNames[file], fullName)
+		b.initTypesInMessage(file, fullName, m)
 	}
 	for _, e := range file.GetEnumType() {
-		b.enums[packageName+"."+e.GetName()] = e
+		fullName := packageName + "." + e.GetName()
+		b.enums[fullName] = e
+		b.fileTypeNames[file] = append(b.fileTypeNames[file], fullName)
 	}
 }
 
 func (b *responseBuilder) initTypesInMessage(file *descriptorpb.FileDescriptorProto, parentName string, message *descriptorpb.DescriptorProto) {
 	for _, m := range message.GetNestedType() {
-		messageName := parentName + "." + m.GetName()
-		b.messageTypes[messageName] = m
-		b.fileMsgTypes[file] = append(b.fileMsgTypes[file], messageName)
-		b.initTypesInMessage(file, messageName, m)
+		fullName := parentName + "." + m.GetName()
+		b.messageTypes[fullName] = m
+		b.fileTypeNames[file] = append(b.fileTypeNames[file], fullName)
+		b.initTypesInMessage(file, fullName, m)
 	}
 	for _, e := range message.GetEnumType() {
-		b.enums[parentName+"."+e.GetName()] = e
+		fullName := parentName + "." + e.GetName()
+		b.enums[fullName] = e
+		b.fileTypeNames[file] = append(b.fileTypeNames[file], fullName)
 	}
 }
 

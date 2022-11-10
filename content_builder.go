@@ -69,8 +69,10 @@ func (b *contentBuilder) buildEnums(enums []*descriptorpb.EnumDescriptorProto, l
 	}
 }
 
-func (b *contentBuilder) isInternalMessage(field *descriptorpb.FieldDescriptorProto) bool {
-	return field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE && slices.Contains(b.fileMsgTypes[b.file], field.GetTypeName())
+func (b *contentBuilder) isInternalDefinition(field *descriptorpb.FieldDescriptorProto) bool {
+	return (field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE ||
+		field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM) &&
+		slices.Contains(b.fileTypeNames[b.file], field.GetTypeName())
 }
 
 func buildIndent(level int) string {

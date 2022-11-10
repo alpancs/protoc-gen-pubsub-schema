@@ -42,7 +42,7 @@ func (b *messageBuilder) buildFields() {
 
 func (b *messageBuilder) buildFieldType(field *descriptorpb.FieldDescriptorProto) string {
 	switch {
-	case b.isInternalMessage(field):
+	case b.isInternalDefinition(field):
 		return getChildName(field.GetTypeName())
 	case field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
 		if b.messageEncoding == "json" && wktMapping[field.GetTypeName()] != "" {
