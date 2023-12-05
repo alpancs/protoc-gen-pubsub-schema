@@ -2,16 +2,33 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"regexp"
 	"strings"
 
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
+const (
+	// Per Buf's definition of identifier
+	// https://protobuf.com/docs/language-spec#identifiers-and-keywords
+	identifier string = `[A-Za-z_]([A-Za-z_]|[0-9])*`
+
+	// Parse parameter of the form top-level-message={message}
+	keyTopLevelMessage string = "top-level-message"
+)
+
+var (
+	// RegEx to extract Message name from top-level-message parameter
+	regexTopLevelMessage string = fmt.Sprintf("%s=(%s)", keyTopLevelMessage, identifier)
+)
+
 type responseBuilder struct {
 	request         *pluginpb.CodeGeneratorRequest
 	schemaSyntax    string
 	messageEncoding string
+	messageTopLevel string
 	protoFiles      map[string]*descriptorpb.FileDescriptorProto
 	messageTypes    map[string]*descriptorpb.DescriptorProto
 	enums           map[string]*descriptorpb.EnumDescriptorProto
@@ -22,10 +39,12 @@ func newResponseBuilder(request *pluginpb.CodeGeneratorRequest) (*responseBuilde
 	if request == nil {
 		return nil, errors.New("newResponseBuilder(request *pluginpb.CodeGeneratorRequest): request is nil")
 	}
+
 	builder := &responseBuilder{
 		request,
 		getSyntax(request),
 		getEncoding(request),
+		getTopLevelMessage(request),
 		make(map[string]*descriptorpb.FileDescriptorProto),
 		make(map[string]*descriptorpb.DescriptorProto),
 		make(map[string]*descriptorpb.EnumDescriptorProto),
@@ -48,6 +67,27 @@ func getEncoding(request *pluginpb.CodeGeneratorRequest) string {
 		return "json"
 	}
 	return "binary"
+}
+
+func getTopLevelMessage(request *pluginpb.CodeGeneratorRequest) string {
+	parameter := request.GetParameter()
+
+	// For consistency with getSyntax and getEncoding, check whether parameter contains key
+	if strings.Contains(parameter, fmt.Sprintf("%s=", keyTopLevelMessage)) {
+		// If the parameter contains the key, use a more expensive regex to extract the value
+		re := regexp.MustCompile(regexTopLevelMessage)
+		messages := re.FindAllStringSubmatch(parameter, -1)
+
+		// Expect single occurrence (not top-level-message=Foo,top-level-message=Bar)
+		if len(messages) == 1 {
+			// Don't return the entire substring ([0]), i.e. top-level-message=message
+			// Only return the value ([1]) i.e. message
+			return messages[0][1]
+		}
+	}
+
+	// Otherwise unable to determine top-level messsage name
+	return ""
 }
 
 func (b *responseBuilder) initProtoFiles() {
