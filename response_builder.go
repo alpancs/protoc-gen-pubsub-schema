@@ -92,7 +92,12 @@ func (b *responseBuilder) initTypesInMessage(file *descriptorpb.FileDescriptorPr
 }
 
 func (b *responseBuilder) build() *pluginpb.CodeGeneratorResponse {
-	resp := new(pluginpb.CodeGeneratorResponse)
+	// Enable experimental support of `optional` fields in `proto3`
+	supportedFeatures := uint64(pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL)
+	resp := &pluginpb.CodeGeneratorResponse{
+		SupportedFeatures: &supportedFeatures,
+	}
+
 	for _, fileName := range b.request.GetFileToGenerate() {
 		respFile, err := b.buildFile(fileName)
 		if err != nil {

@@ -31,7 +31,7 @@ func (b *messageBuilder) buildFields() {
 	for _, field := range b.message.GetField() {
 		fmt.Fprint(b.output, buildIndent(b.level+1))
 		label := field.GetLabel()
-		if b.schemaSyntax == "proto2" || label == descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
+		if label == descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL || label == descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
 			fmt.Fprintf(b.output, "%s ", strings.ToLower(strings.TrimPrefix(label.String(), "LABEL_")))
 		}
 		fmt.Fprintf(b.output, "%s %s = %d;\n", b.buildFieldType(field), field.GetName(), field.GetNumber())
